@@ -5,6 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
 <title>Bows & Bombs</title>
 <style>
+  html, body {
+    /* Prevent panning / pinch-zoom (where supported) */
+    touch-action: none;
+    -ms-touch-action: none;
+    overscroll-behavior: none; /* prevent scroll chaining on mobile browsers */
+    /* optional visual nicety */
+    -webkit-user-select: none; 
+    user-select: none;
+  }
   body {
     margin: 0;
     background: pink;
@@ -16,6 +25,8 @@
     position: relative;
     width: 100vw;
     height: calc(100vh - 120px);
+    /* ensure game container doesn't allow native scrolling if touched */
+    touch-action: none;
   }
 
   #kitty {
@@ -115,6 +126,16 @@
 </div>
 
 <script>
+// Prevent pinch/zoom and double-tap zoom
+(function () {
+  window.addEventListener('gesturestart', function(e){ e.preventDefault(); });
+  document.addEventListener('touchstart', function(e){ if(e.touches && e.touches.length > 1) e.preventDefault(); }, { passive: false });
+  let ___lastTouchEnd = 0;
+  document.addEventListener('touchend', function(e){ const now = Date.now(); if(now - ___lastTouchEnd <= 300) e.preventDefault(); ___lastTouchEnd = now; }, false);
+  window.addEventListener('wheel', function(e){ if(e.ctrlKey || e.metaKey) e.preventDefault(); }, { passive: false });
+  document.addEventListener('keydown', function(e){ if((e.ctrlKey || e.metaKey) && ['+','-','=','0'].includes(e.key)) e.preventDefault(); });
+})();
+
 const game = document.getElementById("game");
 const kitty = document.getElementById("kitty");
 const scoreEl = document.getElementById("score");
