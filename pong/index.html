@@ -335,21 +335,42 @@
     document.addEventListener("keydown", e => keys[e.key] = true);
     document.addEventListener("keyup", e => keys[e.key] = false);
 
-    // attach a single tap-to-move handler that uses CSS pixel sizes
+    // attach a tap-to-move handler that uses CSS pixel sizes
+    // - bottom half taps move the bottom paddle (player 1)
+    // - top half taps move the top paddle only in 2-player mode
     canvas.addEventListener('touchstart', function(e){
       if(!e.touches || e.touches.length === 0) return;
       // guard: if paddles haven't been initialized yet, ignore taps
-      if(!playerPaddle) return;
+      if(!playerPaddle || !aiPaddle) return;
       const rect = canvas.getBoundingClientRect();
-      const touchX = e.touches[0].clientX - rect.left;
+      const touch = e.touches[0];
+      const touchX = touch.clientX - rect.left; // CSS px
+      const touchY = touch.clientY - rect.top;  // CSS px
       const cssWidth = rect.width; // CSS pixels
-      if(touchX < cssWidth/2) {
-        playerPaddle.x -= 40;
-      } else {
-        playerPaddle.x += 40;
+      const cssHeight = rect.height; // CSS pixels
+
+      // Which half was tapped? (0..cssHeight)
+      const tappedTopHalf = (touchY < cssHeight/2);
+
+      // Helper to move a paddle left/right by a fixed amount and clamp within CSS width.
+      function movePaddleCss(paddle, delta) {
+        paddle.x += delta;
+        // clamp using CSS width so visual alignment matches touch coords
+        paddle.x = Math.max(0, Math.min(cssWidth - paddleWidth, paddle.x));
       }
-      // keep paddle inside bounds (use CSS width to compute limit)
-      playerPaddle.x = Math.max(0, Math.min(cssWidth - paddleWidth, playerPaddle.x));
+
+      // If the top half was tapped and we're in 2-player mode, move the top paddle
+      if (tappedTopHalf && mode === 2) {
+        if (touchX < cssWidth/2) movePaddleCss(aiPaddle, -40);
+        else movePaddleCss(aiPaddle, 40);
+      }
+
+      // If the bottom half was tapped, always move the bottom (player 1) paddle
+      if (!tappedTopHalf) {
+        if (touchX < cssWidth/2) movePaddleCss(playerPaddle, -40);
+        else movePaddleCss(playerPaddle, 40);
+      }
+
       e.preventDefault();
     }, { passive: false });
 
