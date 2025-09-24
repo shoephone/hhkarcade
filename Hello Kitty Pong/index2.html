@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Vertical Pong - Mobile Optimized</title>
+<style>
+  body {
+    margin: 0;
+    background: #f0f0f0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden;
+    font-family: sans-serif;
+    flex-direction: column;
+  }
+  body.playing {
+    align-items: flex-start;
+    padding-top: 12px;
+  }
+  canvas {
+    background: #fff;
+    border: 2px solid #333;
+    display: none;
+    touch-action: none; /* disable default gestures */
+  }
+  #menu {
+    text-align: center;
+    padding: 10px;
+  }
+  .character-select {
+    margin: 10px 0;
+  }
+  .character-select img {
+    width: 80px;
+    height: 80px;
+    margin: 8px;
+    border: 3px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: border 0.2s;
+  }
+  .character-select img.selected {
+    border: 3px solid #333;
+  }
+  button {
+    padding: 12px 24px;
+    font-size: 20px;
+    border-radius: 8px;
+    border: none;
+    background: #333;
+    color: #fff;
+    cursor: pointer;
+    margin: 5px;
+  }
+</style>
+</head>
+<body>
+  <div id="menu">
+    <h1>Vertical Pong</h1>
+
+    <div class="character-select">
+      <p>Bottom Player:</p>
+      <div id="bottomChoices"></div>
+    </div>
+    <div class="character-select">
+      <p>Top Player:</p>
+      <div id="topChoices"></div>
+    </div>
+
+    <div>
+      <label>
+        <input type="radio" name="mode" value="1" checked> 1 Player (vs AI)
+      </label>
+      <label>
+        <input type="radio" name="mode" value="2"> 2 Players
+      </label>
+    </div>
+
+    <button id="startBtn">Play</button>
+  </div>
+
+  <canvas id="gameCanvas"></canvas>
+
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+const menu = document.getElementById("menu");
+const startBtn = document.getElementById("startBtn");
+const bottomChoices = document.getElementById("bottomChoices");
+const topChoices = document.getElementById("topChoices");
+
+// Character images (put files in /images/)
+const characters = [
+  "images/player1.png",
+  "images/player2.png",
+  "images/player3.png"
+];
+
+let bottomImg = null;
+let topImg = null;
+let mode = 1; // 1 = AI, 2 = two-player
+
+// Character selection
+function createCharacterChoices(container, callback) {
+  characters.forEach(src => {
+    const img = new Image();
+    img.src = src;
+    img.addEventListener("click", () => {
+      container.querySelectorAll("img").forEach(i => i.classList.remove("selected"));
+      img.classList.add("selected");
+      callback(img);
+    });
+    container.appendChild(img);
+  });
+}
+createCharacterChoices(bottomChoices, img => bottomImg = img);
+createCharacterChoices(topChoices, img => topImg = img);
+
+// --- Responsive canvas ---
+function resizeCanvas() {
+  const designW = 400, designH = 700;
+  const margin = 20;
+  const maxH = window.innerHeight - margin;
+  let targetH = Math.min(designH, maxH);
+  let targetW = targetH * (designW / designH);
+
+  if(targetW > window.innerWidth - margin) {
+    targetW = window.innerWidth - margin;
+    targetH = targetW * (designH / designW);
+  }
+
+  canvas.width = targetW;
+  canvas.height = targetH;
+
+  if(playerPaddle && aiPaddle) resetGame();
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+// --- Game objects ---
+let playerPaddle, aiPaddle, ball, playerScore, aiScore;
+let keys = {};
+let visualScale = 2.5; // paddle images size multiplier
+
+function resetGame() {
+  const paddleWidth = canvas.width * 0.2;
+  const paddleHeight = canvas.height * 0.02;
+  playerPaddle = { x: canvas.width/2 - paddleWidth/2, y: canvas.height - paddleHeight - 10, w: paddleWidth, h: paddleHeight };
+  aiPaddle = { x: canvas.width/2 - paddleWidth/2, y: 10, w: paddleWidth, h: paddleHeight };
+  ball = { x: canvas.width/2, y: canvas.height/2, dx: canvas.width*0.007, dy: canvas.height*0.007, size: canvas.width*0.05 };
+  playerScore = 0;
+  aiScore = 0;
+}
+
+function drawPaddle(p, img) {
+  if(img){
+    const aspect = img.naturalWidth / img.naturalHeight || 1;
+    let drawH = p.h * visualScale;
+    let drawW = drawH * aspect;
+    drawW = Math.min(drawW, canvas.width*0.5);
+    drawH = drawW / aspect;
+    const drawX = p.x + (p.w - drawW)/2;
+    const drawY = p.y + (p.h - drawH)/2;
+    ctx.drawImage(img, drawX, drawY, drawW, drawH);
+  } else {
+    ctx.fillStyle = "#333";
+    ctx.fillRect(p.x, p.y, p.w, p.h);
+  }
+}
+
+function drawBall() {
+  ctx.beginPath();
+  ctx.arc(ball.x + ball.size/2, ball.y + ball.size/2, ball.size/2, 0, Math.PI*2);
+  ctx.fillStyle = "#e74c3c";
+  ctx.fill();
+  ctx.closePath();
+}
+
+function drawScores() {
+  ctx.fillStyle = "#000";
+  ctx.font = `${canvas.height*0.03}px Arial`;
+  ctx.fillText("Bottom: " + playerScore, 10, canvas.height - 10);
+  ctx.fillText("Top: " + aiScore, 10, 25);
+}
+
+function update() {
+  // --- Bottom paddle: keyboard
+  if(keys["ArrowLeft"]) playerPaddle.x -= canvas.width*0.012;
+  if(keys["ArrowRight"]) playerPaddle.x += canvas.width*0.012;
+  playerPaddle.x = Math.max(0, Math.min(canvas.width - playerPaddle.w, playerPaddle.x));
+
+  // --- Top paddle
+  if(mode===1){
+    // AI follows ball
+    const speed = canvas.width*0.007;
+    if(ball.x < aiPaddle.x + aiPaddle.w/2) aiPaddle.x -= speed;
+    if(ball.x > aiPaddle.x + aiPaddle.w/2) aiPaddle.x += speed;
+  } else {
+    if(keys["a"]||keys["A"]) aiPaddle.x -= canvas.width*0.012;
+    if(keys["d"]||keys["D"]) aiPaddle.x += canvas.width*0.012;
+  }
+  aiPaddle.x = Math.max(0, Math.min(canvas.width - aiPaddle.w, aiPaddle.x));
+
+  // --- Ball movement
+  ball.x += ball.dx;
+  ball.y += ball.dy;
+  if(ball.x <= 0 || ball.x + ball.size >= canvas.width) ball.dx*=-1;
+
+  // Paddle collisions
+  if(ball.y + ball.size >= playerPaddle.y &&
+     ball.x + ball.size > playerPaddle.x &&
+     ball.x < playerPaddle.x + playerPaddle.w){
+    ball.dy *= -1;
+    ball.y = playerPaddle.y - ball.size;
+  }
+  if(ball.y <= aiPaddle.y + aiPaddle.h &&
+     ball.x + ball.size > aiPaddle.x &&
+     ball.x < aiPaddle.x + aiPaddle.w){
+    ball.dy *= -1;
+    ball.y = aiPaddle.y + aiPaddle.h;
+  }
+
+  // Scoring
+  if(ball.y < 0){ playerScore++; resetBall();}
+  if(ball.y > canvas.height){ aiScore++; resetBall();}
+}
+
+function resetBall(){
+  ball.x = canvas.width/2;
+  ball.y = canvas.height/2;
+  ball.dx = (Math.random()<0.5?1:-1)*canvas.width*0.007;
+  ball.dy = (Math.random()<0.5?1:-1)*canvas.height*0.007;
+}
+
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  drawPaddle(playerPaddle,bottomImg);
+  drawPaddle(aiPaddle,topImg);
+  drawBall();
+  drawScores();
+}
+
+function gameLoop(){ update(); draw(); requestAnimationFrame(gameLoop); }
+
+document.addEventListener("keydown", e=>keys[e.key]=true);
+document.addEventListener("keyup", e=>keys[e.key]=false);
+
+// --- Mobile touch controls ---
+canvas.addEventListener("touchstart", handleTouch);
+canvas.addEventListener("touchmove", handleTouch);
+function handleTouch(e){
+  e.preventDefault();
+  const touchX = e.touches[0].clientX - canvas.getBoundingClientRect().left;
+  playerPaddle.x = touchX - playerPaddle.w/2;
+  playerPaddle.x = Math.max(0, Math.min(canvas.width - playerPaddle.w, playerPaddle.x));
+}
+
+// --- Start button ---
+startBtn.addEventListener("click", ()=>{
+  const modeChoice = document.querySelector("input[name='mode']:checked").value;
+  mode = parseInt(modeChoice);
+  if(!bottomImg || !topImg){ alert("Select characters!"); return; }
+  document.body.classList.add("playing");
+  menu.style.display="none";
+  canvas.style.display="block";
+  resetGame();
+  gameLoop();
+});
+</script>
+</body>
+</html>

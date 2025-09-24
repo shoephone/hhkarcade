@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hello Kitty Catcher</title>
+<style>
+  body {
+    margin: 0;
+    background: pink;
+    overflow: hidden;
+    font-family: sans-serif;
+  }
+
+  #game {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+  }
+
+  #kitty {
+    position: absolute;
+    bottom: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 140px;
+    z-index: 5;
+    transition: transform 0.2s;
+  }
+
+  .item {
+    position: absolute;
+    top: 0;
+    width: 70px;
+    animation: wiggle 1s infinite ease-in-out;
+  }
+
+  @keyframes wiggle {
+    0% { transform: rotate(-5deg); }
+    50% { transform: rotate(5deg); }
+    100% { transform: rotate(-5deg); }
+  }
+
+  #score {
+    position: absolute;
+    top: 20px;
+    left: 10px;
+    font-size: 28px;
+    color: white;
+    z-index: 10;
+  }
+
+  #high-score {
+    position: absolute;
+    top: 60px;
+    left: 10px;
+    font-size: 24px;
+    color: white;
+    z-index: 10;
+  }
+
+  @keyframes highScorePop {
+    0% { transform: scale(1); color: white; }
+    50% { transform: scale(1.5); color: gold; }
+    100% { transform: scale(1); color: white; }
+  }
+
+  #high-score.pop {
+    animation: highScorePop 0.6s ease-in-out;
+  }
+
+  #popup, #gold-popup {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 140px;
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0;
+    z-index: 20;
+    pointer-events: none;
+    transition: transform 0.5s cubic-bezier(.68,-0.55,.27,1.55), opacity 0.5s ease-in-out;
+  }
+
+  #popup.show, #gold-popup.show {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+
+  .confetti {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background-color: yellow;
+    z-index: 30;
+    pointer-events: none;
+    opacity: 0.9;
+  }
+
+  @media (max-width: 480px) {
+    #kitty { bottom: 60px; width: 140px; }
+    .item { width: 60px; }
+    #popup, #gold-popup { width: 120px; }
+    #score { font-size: 32px; }
+    #high-score { font-size: 28px; }
+    .confetti { width: 6px; height: 6px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="game">
+  <div id="score">Bows: 0</div>
+  <div id="high-score">High Score: 0</div>
+  <img id="kitty" src="hello-kitty.png" alt="Hello Kitty">
+  <img id="popup" src="special.png" alt="Special Pop-up!">
+  <img id="gold-popup" src="golden-special.png" alt="Golden Special!" />
+</div>
+
+<script>
+const game = document.getElementById("game");
+const kitty = document.getElementById("kitty");
+const scoreEl = document.getElementById("score");
+const highScoreEl = document.getElementById("high-score");
+const popup = document.getElementById("popup");
+const goldPopup = document.getElementById("gold-popup");
+
+let score = 0;
+let kittyX = window.innerWidth / 2;
+
+// High score from localStorage
+let highScore = localStorage.getItem("helloKittyHighScore") || 0;
+highScoreEl.textContent = "High Score: " + highScore;
+
+// Move Kitty function
+function moveKitty(newX) {
+  kittyX = Math.max(0, Math.min(window.innerWidth - kitty.offsetWidth, newX));
+  kitty.style.left = kittyX + "px";
+}
+
+// Desktop: arrow keys
+document.addEventListener("keydown", (e) => {
+  if (e.key === "ArrowLeft") moveKitty(kittyX - 30);
+  if (e.key === "ArrowRight") moveKitty(kittyX + 30);
+});
+
+// Mobile: tap left/right
+game.addEventListener("touchstart", (e) => {
+  const touchX = e.touches[0].clientX;
+  if (touchX < window.innerWidth / 2) moveKitty(kittyX - 40);
+  else moveKitty(kittyX + 40);
+});
+
+// Spawn falling bows (normal or golden)
+function spawnItem() {
+  const item = document.createElement("img");
+  const isGolden = Math.random() < 0.05; // 5% chance for golden bow
+  item.src = isGolden ? "bow-golden.png" : "bow.png";
+  item.classList.add("item");
+  item.style.left = Math.random() * (window.innerWidth - 100) + "px";
+  game.appendChild(item);
+
+  let y = 0;
+  const fall = setInterval(() => {
+    y += 5;
+    item.style.top = y + "px";
+
+    const kittyRect = kitty.getBoundingClientRect();
+    const itemRect = item.getBoundingClientRect();
+
+    if (
+      itemRect.bottom >= kittyRect.top &&
+      itemRect.left + itemRect.width/2 >= kittyRect.left &&
+      itemRect.right - itemRect.width/2 <= kittyRect.right
+    ) {
+      score++;
+      scoreEl.textContent = "Bows: " + score;
+
+      // Kitty bounce
+      kitty.style.transform = "translateX(-50%) scale(1.25)";
+      setTimeout(() => { kitty.style.transform = "translateX(-50%) scale(1)"; }, 150);
+
+      // Update high score
+      if (score > highScore) {
+        highScore = score;
+        localStorage.setItem("helloKittyHighScore", highScore);
+        highScoreEl.textContent = "High Score: " + highScore;
+        highScoreEl.classList.add("pop");
+        setTimeout(() => { highScoreEl.classList.remove("pop"); }, 600);
+      }
+
+      // Golden bow special
+      if (isGolden) showGoldPopup();
+      else if (score % 10 === 0) {
+        showPopup();
+        launchConfetti(30);
+      }
+
+      game.removeChild(item);
+      clearInterval(fall);
+    }
+
+    if (y > window.innerHeight) {
+      if (game.contains(item)) game.removeChild(item);
+      clearInterval(fall);
+    }
+  }, 30);
+}
+
+// Spawn items every 1.5s
+setInterval(spawnItem, 1500);
+
+// Pop-up functions
+function showPopup() {
+  popup.classList.add("show");
+  setTimeout(() => { popup.classList.remove("show"); }, 1000);
+}
+function showGoldPopup() {
+  goldPopup.classList.add("show");
+  setTimeout(() => { goldPopup.classList.remove("show"); }, 1200);
+  launchConfetti(50); // bigger confetti for golden bow
+}
+
+// Confetti effect
+function launchConfetti(amount) {
+  for (let i = 0; i < amount; i++) {
+    const confetti = document.createElement("div");
+    confetti.classList.add("confetti");
+    confetti.style.backgroundColor = `hsl(${Math.random()*360}, 80%, 60%)`;
+    confetti.style.left = Math.random() * window.innerWidth + "px";
+    confetti.style.top = "0px";
+    game.appendChild(confetti);
+
+    let y = 0;
+    const fall = setInterval(() => {
+      y += Math.random() * 7 + 3;
+      confetti.style.top = y + "px";
+      confetti.style.transform = `rotate(${y*5}deg)`;
+      if (y > window.innerHeight) {
+        game.removeChild(confetti);
+        clearInterval(fall);
+      }
+    }, 30);
+  }
+}
+</script>
+
+</body>
+</html>
