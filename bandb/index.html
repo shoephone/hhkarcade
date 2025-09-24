@@ -15,17 +15,15 @@
   #game {
     position: relative;
     width: 100vw;
-    /* raise the bottom of the frame by reducing game height */
-    height: calc(100vh - 120px); /* adjust this value to move bottom up/down */
+    height: calc(100vh - 120px);
   }
 
   #kitty {
     position: absolute;
-    /* keep kitty visually above the new bottom */
     bottom: 60px;
     left: 50%;
     transform: translateX(-50%);
-    width: 120px; /* slightly smaller */
+    width: 120px;
     z-index: 5;
     transition: transform 0.2s;
   }
@@ -33,7 +31,7 @@
   .item {
     position: absolute;
     top: 0;
-    width: 60px; /* smaller for mobile */
+    width: 60px;
     animation: wiggle 1s infinite ease-in-out;
   }
 
@@ -52,23 +50,20 @@
     z-index: 10;
   }
 
-  #highscore {
-    top: 40px;
+  #highscore { top: 40px; }
+
+  #specialCounter, #goldenCounter {
+    display: flex;
+    align-items: center;
+    font-size: 20px;
+    color: white;
   }
 
-#specialCounter, #goldenCounter {
-  display: flex;
-  align-items: center;
-  font-size: 20px;
-  color: white;
-}
-
-#specialCounter img, #goldenCounter img {
-  width: 32px;
-  height: 32px;
-  margin-right: 5px;
-}
-
+  #specialCounter img, #goldenCounter img {
+    width: 32px;
+    height: 32px;
+    margin-right: 5px;
+  }
 
   #popup {
     position: absolute;
@@ -104,20 +99,19 @@
   <div id="score">Bows: 0</div>
   <div id="highscore">High Score: 0</div>
 
-<div id="counters" style="position:absolute; top:10px; right:10px; display:flex; gap:10px; z-index:10;">
-  <div id="specialCounter" style="display:none; align-items:center;">
-    <img src="special.png" alt="Special">
-    <span id="specialCount">0</span>
+  <div id="counters" style="position:absolute; top:10px; right:10px; display:flex; gap:10px; z-index:10;">
+    <div id="specialCounter" style="display:none; align-items:center;">
+      <img src="images/special.png" alt="Special">
+      <span id="specialCount">0</span>
+    </div>
+    <div id="goldenCounter" style="display:none; align-items:center;">
+      <img src="images/golden-special.png" alt="Golden Special">
+      <span id="goldenCount">0</span>
+    </div>
   </div>
-  <div id="goldenCounter" style="display:none; align-items:center;">
-    <img src="golden-special.png" alt="Golden Special">
-    <span id="goldenCount">0</span>
-  </div>
-</div>
 
-
-  <img id="kitty" src="hello-kitty.png" alt="Hello Kitty">
-  <img id="popup" src="special.png" alt="Special Pop-up!">
+  <img id="kitty" src="images/hello-kitty.png" alt="Hello Kitty">
+  <img id="popup" src="images/special.png" alt="Special Pop-up!">
 </div>
 
 <script>
@@ -142,9 +136,8 @@ let kittyPowerActive = false;
 
 // Move Kitty
 function moveKitty(newX) {
-  // allow kitty to reach the visual edges by clamping against the game container
-  const minX = -kitty.offsetWidth/2; // allow half off-screen on left
-  const maxX = game.clientWidth - kitty.offsetWidth/2; // allow half off-screen on right
+  const minX = -kitty.offsetWidth/2;
+  const maxX = game.clientWidth - kitty.offsetWidth/2;
   kittyX = Math.max(minX, Math.min(maxX, newX));
   kitty.style.left = kittyX + "px";
 }
@@ -162,18 +155,18 @@ game.addEventListener("touchstart", e => {
   else moveKitty(kittyX + 40);
 });
 
-// Prevent common zoom gestures (Ctrl/Cmd + wheel, Ctrl/Cmd + keys, gesture events on mobile)
-window.addEventListener('wheel', function(e){ if(e.ctrlKey || e.metaKey) e.preventDefault(); }, { passive: false });
-window.addEventListener('keydown', function(e){ if((e.ctrlKey || e.metaKey) && ['+','-','=','0'].includes(e.key)) e.preventDefault(); });
-window.addEventListener('gesturestart', function(e){ e.preventDefault(); });
+// Prevent zoom gestures
+window.addEventListener('wheel', e => { if(e.ctrlKey || e.metaKey) e.preventDefault(); }, { passive: false });
+window.addEventListener('keydown', e => { if((e.ctrlKey || e.metaKey) && ['+','-','=','0'].includes(e.key)) e.preventDefault(); });
+window.addEventListener('gesturestart', e => { e.preventDefault(); });
 
 // Spawn items
 function spawnItem(type) {
   const item = document.createElement("img");
-  if(type==="bow") item.src="bow.png";
-  if(type==="bow-golden") item.src="bow-golden.png";
-  if(type==="bomb") item.src="bomb.png";
-  if(type==="powerup") item.src="powerup.png";
+  if(type==="bow") item.src="images/bow.png";
+  if(type==="bow-golden") item.src="images/bow-golden.png";
+  if(type==="bomb") item.src="images/bomb.png";
+  if(type==="powerup") item.src="images/powerup.png";
 
   item.classList.add("item");
   item.style.left = Math.random() * (window.innerWidth - 100) + "px";
@@ -181,15 +174,13 @@ function spawnItem(type) {
 
   let y = 0;
   let speed = 5;
-  if(type === "bomb"){
-    // bombs fall at varied speeds
-    speed = 4 + Math.random() * 6; // between ~4 and ~10
-    // make bomb a little larger (optional visual cue)
+  if(type === "bomb") {
+    speed = 4 + Math.random()*6;
     item.style.width = "72px";
   }
-  if(type==="powerup") speed = 10; // faster
+  if(type === "powerup") speed = 10;
 
-  const fall = setInterval(()=>{
+  const fall = setInterval(()=> {
     y += speed;
     item.style.top = y + "px";
 
@@ -200,31 +191,25 @@ function spawnItem(type) {
        itemRect.left + itemRect.width/2 >= kittyRect.left &&
        itemRect.right - itemRect.width/2 <= kittyRect.right) {
 
-      // Bomb behavior: if kitty is powered (golden) ignore; otherwise reset game
       if(type === "bomb"){
-        if(!kittyPowerActive){
-          resetGame();
-        }
+        if(!kittyPowerActive) resetGame();
         if(game.contains(item)) game.removeChild(item);
         clearInterval(fall);
-        return; // skip other effects
+        return;
       }
 
       if(type==="bow"){
         score++;
-        scoreEl.textContent = "Bows: "+score;
-        if(score > highScore) { 
-          highScore = score; 
-          highscoreEl.textContent = "High Score: "+highScore; 
+        scoreEl.textContent = "Bows:"+score;
+        if(score > highScore){
+          highScore = score;
+          highscoreEl.textContent = "High Score: "+highScore;
           localStorage.setItem("highScore", highScore);
         }
-
         if(!kittyPowerActive){
           kitty.style.transform="translateX(-50%) scale(1.25)";
           setTimeout(()=>{ kitty.style.transform="translateX(-50%) scale(1)"; },150);
         }
-
-        // Every 10 bows → special + confetti
         if(score % 10 === 0){
           specials++;
           specialCounter.style.display="flex";
@@ -232,18 +217,16 @@ function spawnItem(type) {
           showPopup();
           launchConfetti(30);
         }
-
       } else if(type==="bow-golden"){
         goldenSpecials++;
         goldenCounter.style.display="flex";
         goldenCount.textContent = goldenSpecials;
       } else if(type==="powerup" && !kittyPowerActive){
         kittyPowerActive = true;
-        kitty.src="golden-special.png";
+        kitty.src="images/golden-special.png";
         kitty.style.transform="translateX(-50%) scale(2)";
-
         setTimeout(()=>{
-          kitty.src="hello-kitty.png";
+          kitty.src="images/hello-kitty.png";
           kitty.style.transform="translateX(-50%) scale(1)";
           kittyPowerActive = false;
         },5000);
@@ -262,19 +245,14 @@ function spawnItem(type) {
 
 // Spawn intervals
 setInterval(()=>spawnItem("bow"), 1500);
-setInterval(()=>spawnItem("bow-golden"), 4000); 
-// spawn powerups much less frequently (every 30 seconds)
+setInterval(()=>spawnItem("bow-golden"), 4000);
 setInterval(()=>spawnItem("powerup"), 30000);
-// spawn bombs occasionally with sporadic short "frenzy" periods (more frequent)
+
 function startBombSpawner(){
-  const baseDelay = 9000; // normal delay (more frequent)
-  // Normal periodic spawn
+  const baseDelay = 9000;
   setInterval(()=>{
     spawnItem("bomb");
-    // small chance to start a short frenzy where bombs are much more frequent
-    if(Math.random() < 0.12){ // ~12% chance per spawn
-      startBombFrenzy();
-    }
+    if(Math.random() < 0.12) startBombFrenzy();
   }, baseDelay);
 }
 
@@ -282,27 +260,19 @@ let bombFrenzyActive = false;
 function startBombFrenzy(){
   if(bombFrenzyActive) return;
   bombFrenzyActive = true;
-  const frenzyDuration = 10000; // 10 seconds of increased frequency
-  const frenzyInterval = 1500; // spawn a bomb every 1.5s during frenzy
-
+  const frenzyDuration = 10000;
+  const frenzyInterval = 1500;
   const id = setInterval(()=>{ spawnItem("bomb"); }, frenzyInterval);
-
-  setTimeout(()=>{
-    clearInterval(id);
-    bombFrenzyActive = false;
-  }, frenzyDuration);
+  setTimeout(()=>{ clearInterval(id); bombFrenzyActive=false; }, frenzyDuration);
 }
 
-// start the spawner
 startBombSpawner();
 
-// Pop-up
 function showPopup(){
   popup.classList.add("show");
   setTimeout(()=>{ popup.classList.remove("show"); },1000);
 }
 
-// Confetti
 function launchConfetti(amount){
   for(let i=0;i<amount;i++){
     const confetti = document.createElement("div");
@@ -325,32 +295,26 @@ function launchConfetti(amount){
   }
 }
 
-// Reset game state when a bomb is caught by normal kitty
 function resetGame(){
-  // reset scores and counters
-  score = 0;
-  // keep stored high score; just reload it for display
-  highScore = localStorage.getItem("highScore") ? parseInt(localStorage.getItem("highScore")) : 0;
-  scoreEl.textContent = "Bows: " + score;
-  highscoreEl.textContent = "High Score: " + highScore;
-  specials = 0;
-  goldenSpecials = 0;
-  specialCount.textContent = specials;
-  goldenCount.textContent = goldenSpecials;
-  specialCounter.style.display = "none";
-  goldenCounter.style.display = "none";
+  score=0;
+  highScore=localStorage.getItem("highScore") ? parseInt(localStorage.getItem("highScore")) : 0;
+  scoreEl.textContent="Bows: "+score;
+  highscoreEl.textContent="High Score: "+highScore;
+  specials=0;
+  goldenSpecials=0;
+  specialCount.textContent=specials;
+  goldenCount.textContent=goldenSpecials;
+  specialCounter.style.display="none";
+  goldenCounter.style.display="none";
 
-  // remove all falling items and confetti
-  const toRemove = Array.from(game.querySelectorAll('.item, .confetti'));
-  toRemove.forEach(el => { if(game.contains(el)) game.removeChild(el); });
+  const toRemove=Array.from(game.querySelectorAll('.item,.confetti'));
+  toRemove.forEach(el=>{ if(game.contains(el)) game.removeChild(el); });
 
-  // remove popup
   popup.classList.remove('show');
 
-  // reset kitty state
-  kitty.src = "hello-kitty.png";
-  kitty.style.transform = "translateX(-50%) scale(1)";
-  kittyPowerActive = false;
+  kitty.src="images/hello-kitty.png";
+  kitty.style.transform="translateX(-50%) scale(1)";
+  kittyPowerActive=false;
 }
 </script>
 
