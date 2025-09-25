@@ -279,6 +279,8 @@ function spawnItem(type) {
       } else if(type==="powerup" && !kittyPowerActive){
         kittyPowerActive = true;
         kitty.src="images/golden-special.png";
+          // Raise the kitty slightly
+        kitty.style.bottom = "100px";  // e.g., 20px higher than normal
         kitty.style.transform="translateX(-50%) scale(2)";
         setTimeout(()=>{
           kitty.src="images/hello-kitty.png";
@@ -371,3 +373,4 @@ function resetGame(){
 
 </body>
 </html>
+
