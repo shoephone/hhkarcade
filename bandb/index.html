@@ -33,7 +33,7 @@
     transform: translateX(-50%);
     width: 120px;
     z-index: 5;
-    transition: transform 0.2s;
+    transition: transform 0.2s, bottom 0.2s;
   }
 
   #clouds {
@@ -47,7 +47,7 @@
       bottom: 0;
       left: 0;
       width: 100%;
-      height: 100px; /* match cloud image */
+      height: auto;
       object-fit: cover;
       z-index: 3;
     }
@@ -145,12 +145,12 @@
 
 <script>
 (function () {
-  window.addEventListener('gesturestart', function(e){ e.preventDefault(); });
-  document.addEventListener('touchstart', function(e){ if(e.touches && e.touches.length > 1) e.preventDefault(); }, { passive: false });
+  window.addEventListener('gesturestart', e => e.preventDefault());
+  document.addEventListener('touchstart', e => { if(e.touches && e.touches.length > 1) e.preventDefault(); }, { passive: false });
   let ___lastTouchEnd = 0;
-  document.addEventListener('touchend', function(e){ const now = Date.now(); if(now - ___lastTouchEnd <= 300) e.preventDefault(); ___lastTouchEnd = now; }, false);
-  window.addEventListener('wheel', function(e){ if(e.ctrlKey || e.metaKey) e.preventDefault(); }, { passive: false });
-  document.addEventListener('keydown', function(e){ if((e.ctrlKey || e.metaKey) && ['+','-','=','0'].includes(e.key)) e.preventDefault(); });
+  document.addEventListener('touchend', e => { const now = Date.now(); if(now - ___lastTouchEnd <= 300) e.preventDefault(); ___lastTouchEnd = now; }, false);
+  window.addEventListener('wheel', e => { if(e.ctrlKey || e.metaKey) e.preventDefault(); }, { passive: false });
+  document.addEventListener('keydown', e => { if((e.ctrlKey || e.metaKey) && ['+','-','=','0'].includes(e.key)) e.preventDefault(); });
 })();
 
 const game = document.getElementById("game");
@@ -212,10 +212,7 @@ function spawnItem(type) {
 
   let y = 0;
   let speed = 5;
-  if(type === "bomb") {
-    speed = 4 + Math.random()*6;
-    item.style.width = "72px";
-  }
+  if(type === "bomb") { speed = 4 + Math.random()*6; item.style.width = "72px"; }
   if(type === "powerup") speed = 10;
 
   const fall = setInterval(()=> {
@@ -279,12 +276,12 @@ function spawnItem(type) {
       } else if(type==="powerup" && !kittyPowerActive){
         kittyPowerActive = true;
         kitty.src="images/golden-special.png";
-          // Raise the kitty slightly
-        kitty.style.bottom = "100px";  // e.g., 20px higher than normal
+        kitty.style.bottom = "100px";  // kitty rises slightly
         kitty.style.transform="translateX(-50%) scale(2)";
         setTimeout(()=>{
           kitty.src="images/hello-kitty.png";
           kitty.style.transform="translateX(-50%) scale(1)";
+          kitty.style.bottom = window.innerWidth <= 768 ? "80px" : "0px";
           kittyPowerActive = false;
         },5000);
       }
@@ -367,10 +364,10 @@ function resetGame(){
 
   kitty.src="images/hello-kitty.png";
   kitty.style.transform="translateX(-50%) scale(1)";
+  kitty.style.bottom = window.innerWidth <= 768 ? "80px" : "0px";
   kittyPowerActive=false;
 }
 </script>
 
 </body>
 </html>
-
