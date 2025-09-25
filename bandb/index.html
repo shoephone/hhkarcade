@@ -6,11 +6,9 @@
 <title>Bows & Bombs</title>
 <style>
   html, body {
-    /* Prevent panning / pinch-zoom (where supported) */
     touch-action: none;
     -ms-touch-action: none;
-    overscroll-behavior: none; /* prevent scroll chaining on mobile browsers */
-    /* optional visual nicety */
+    overscroll-behavior: none;
     -webkit-user-select: none; 
     user-select: none;
   }
@@ -21,22 +19,41 @@
     font-family: sans-serif;
   }
 
-#game {
-  position: relative;
-  width: 100vw;
-  height: calc(100dvh - env(safe-area-inset-bottom));
-  margin-bottom: env(safe-area-inset-bottom);
-  overflow: hidden;
-}
+  #game {
+    position: relative;
+    width: 100vw;
+    height: 100dvh;
+    overflow: hidden;
+  }
 
   #kitty {
     position: absolute;
-    bottom: 1px;
+    bottom: 0; /* default for desktop */
     left: 50%;
     transform: translateX(-50%);
     width: 120px;
     z-index: 5;
     transition: transform 0.2s;
+  }
+
+  #clouds {
+    display: none; /* hidden on desktop */
+  }
+
+  @media (max-width: 768px) {
+    #clouds {
+      display: block;
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 100px; /* match cloud image */
+      object-fit: cover;
+      z-index: 3;
+    }
+    #kitty {
+      bottom: 80px; /* float above clouds */
+    }
   }
 
   .item {
@@ -121,12 +138,12 @@
     </div>
   </div>
 
+  <img id="clouds" src="images/cloud.png" alt="Clouds">
   <img id="kitty" src="images/hello-kitty.png" alt="Hello Kitty">
   <img id="popup" src="images/special.png" alt="Special Pop-up!">
 </div>
 
 <script>
-// Prevent pinch/zoom and double-tap zoom
 (function () {
   window.addEventListener('gesturestart', function(e){ e.preventDefault(); });
   document.addEventListener('touchstart', function(e){ if(e.touches && e.touches.length > 1) e.preventDefault(); }, { passive: false });
@@ -155,15 +172,11 @@ let goldenSpecials = 0;
 let kittyX = window.innerWidth / 2;
 let kittyPowerActive = false;
 
-// Collision sensitivity knobs (least-invasive):
-// Increase kittyPadX/kittyPadY to make catches/hits more forgiving for kitty.
-// For bombs we use a slightly smaller pad to make them harder to accidentally touch.
-const DEFAULT_KITTY_PAD_X = .05; // px
-const DEFAULT_KITTY_PAD_Y = .05; // px
-const BOMB_KITTY_PAD_X = -20;   // negative = stricter
+// Collision sensitivity
+const DEFAULT_KITTY_PAD_X = .05; 
+const DEFAULT_KITTY_PAD_Y = .05; 
+const BOMB_KITTY_PAD_X = -20;   
 const BOMB_KITTY_PAD_Y = -20;
-// Single sensitivity knob: increase (>1) to make catches/hits more forgiving, decrease (<1) to make stricter.
-// Change this single number to tune the overall collision area.
 const SENSITIVITY = .025;
 
 // Move Kitty
@@ -174,23 +187,16 @@ function moveKitty(newX) {
   kitty.style.left = kittyX + "px";
 }
 
-// Arrow keys
+// Controls
 document.addEventListener("keydown", e => {
   if(e.key === "ArrowLeft") moveKitty(kittyX - 30);
   if(e.key === "ArrowRight") moveKitty(kittyX + 30);
 });
-
-// Tap for mobile
 game.addEventListener("touchstart", e => {
   const touchX = e.touches[0].clientX;
   if(touchX < window.innerWidth / 2) moveKitty(kittyX - 40);
   else moveKitty(kittyX + 40);
 });
-
-// Prevent zoom gestures
-window.addEventListener('wheel', e => { if(e.ctrlKey || e.metaKey) e.preventDefault(); }, { passive: false });
-window.addEventListener('keydown', e => { if((e.ctrlKey || e.metaKey) && ['+','-','=','0'].includes(e.key)) e.preventDefault(); });
-window.addEventListener('gesturestart', e => { e.preventDefault(); });
 
 // Spawn items
 function spawnItem(type) {
@@ -219,11 +225,10 @@ function spawnItem(type) {
     const kittyRect = kitty.getBoundingClientRect();
     const itemRect = item.getBoundingClientRect();
 
-    // Use a padded bounding-box intersection test so sensitivity can be tuned
-  const basePadX = (type === 'bomb') ? BOMB_KITTY_PAD_X : DEFAULT_KITTY_PAD_X;
-  const basePadY = (type === 'bomb') ? BOMB_KITTY_PAD_Y : DEFAULT_KITTY_PAD_Y;
-  const kittyPadX = basePadX * SENSITIVITY;
-  const kittyPadY = basePadY * SENSITIVITY;
+    const basePadX = (type === 'bomb') ? BOMB_KITTY_PAD_X : DEFAULT_KITTY_PAD_X;
+    const basePadY = (type === 'bomb') ? BOMB_KITTY_PAD_Y : DEFAULT_KITTY_PAD_Y;
+    const kittyPadX = basePadX * SENSITIVITY;
+    const kittyPadY = basePadY * SENSITIVITY;
 
     const k = {
       left: kittyRect.left - kittyPadX,
@@ -293,17 +298,14 @@ function spawnItem(type) {
   },30);
 }
 
-// Spawn intervals
+// Spawners
 setInterval(()=>spawnItem("bow"), 1500);
 setInterval(()=>spawnItem("bow-golden"), 4000);
 setInterval(()=>spawnItem("powerup"), 30000);
 
 function startBombSpawner(){
   const baseDelay = 9000;
-  setInterval(()=>{
-    spawnItem("bomb");
-    if(Math.random() < 0.12) startBombFrenzy();
-  }, baseDelay);
+  setInterval(()=>{ spawnItem("bomb"); if(Math.random() < 0.12) startBombFrenzy(); }, baseDelay);
 }
 
 let bombFrenzyActive = false;
@@ -315,7 +317,6 @@ function startBombFrenzy(){
   const id = setInterval(()=>{ spawnItem("bomb"); }, frenzyInterval);
   setTimeout(()=>{ clearInterval(id); bombFrenzyActive=false; }, frenzyDuration);
 }
-
 startBombSpawner();
 
 function showPopup(){
@@ -370,6 +371,3 @@ function resetGame(){
 
 </body>
 </html>
-
-
-
