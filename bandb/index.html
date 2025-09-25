@@ -24,14 +24,14 @@
   #game {
     position: relative;
     width: 100vw;
-    height: calc(100vh - 100px);
+    height: calc(100vh - 90px);
     /* ensure game container doesn't allow native scrolling if touched */
     touch-action: none;
   }
 
   #kitty {
     position: absolute;
-    bottom: 10px;
+    bottom: 1px;
     left: 50%;
     transform: translateX(-50%);
     width: 120px;
@@ -155,6 +155,14 @@ let goldenSpecials = 0;
 let kittyX = window.innerWidth / 2;
 let kittyPowerActive = false;
 
+// Collision sensitivity knobs (least-invasive):
+// Increase kittyPadX/kittyPadY to make catches/hits more forgiving for kitty.
+// For bombs we use a slightly smaller pad to make them harder to accidentally touch.
+const DEFAULT_KITTY_PAD_X = 8; // px
+const DEFAULT_KITTY_PAD_Y = 4; // px
+const BOMB_KITTY_PAD_X = -6;   // negative = stricter
+const BOMB_KITTY_PAD_Y = 0;
+
 // Move Kitty
 function moveKitty(newX) {
   const minX = -kitty.offsetWidth/2;
@@ -208,13 +216,29 @@ function spawnItem(type) {
     const kittyRect = kitty.getBoundingClientRect();
     const itemRect = item.getBoundingClientRect();
 
-    if(itemRect.bottom >= kittyRect.top &&
-       itemRect.left + itemRect.width/2 >= kittyRect.left &&
-       itemRect.right - itemRect.width/2 <= kittyRect.right) {
+    // Use a padded bounding-box intersection test so sensitivity can be tuned
+    const kittyPadX = (type === 'bomb') ? BOMB_KITTY_PAD_X : DEFAULT_KITTY_PAD_X;
+    const kittyPadY = (type === 'bomb') ? BOMB_KITTY_PAD_Y : DEFAULT_KITTY_PAD_Y;
 
-      if(type === "bomb"){
-        if(!kittyPowerActive) resetGame();
-        if(game.contains(item)) game.removeChild(item);
+    const k = {
+      left: kittyRect.left - kittyPadX,
+      right: kittyRect.right + kittyPadX,
+      top: kittyRect.top - kittyPadY,
+      bottom: kittyRect.bottom + kittyPadY
+    };
+    const it = {
+      left: itemRect.left,
+      right: itemRect.right,
+      top: itemRect.top,
+      bottom: itemRect.bottom
+    };
+
+    const intersects = !(it.right < k.left || it.left > k.right || it.bottom < k.top || it.top > k.bottom);
+
+    if (intersects) {
+      if (type === "bomb") {
+        if (!kittyPowerActive) resetGame();
+        if (game.contains(item)) game.removeChild(item);
         clearInterval(fall);
         return;
       }
@@ -341,6 +365,3 @@ function resetGame(){
 
 </body>
 </html>
-
-
-
