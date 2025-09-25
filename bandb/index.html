@@ -21,13 +21,13 @@
     font-family: sans-serif;
   }
 
-  #game {
-    position: relative;
-    width: 100vw;
-    height: 100dvh;
-    /* ensure game container doesn't allow native scrolling if touched */
-    overflow: hidden;
-  }
+#game {
+  position: relative;
+  width: 100vw;
+  height: calc(100dvh - env(safe-area-inset-bottom));
+  margin-bottom: env(safe-area-inset-bottom);
+  overflow: hidden;
+}
 
   #kitty {
     position: absolute;
@@ -370,5 +370,6 @@ function resetGame(){
 
 </body>
 </html>
+
 
 
