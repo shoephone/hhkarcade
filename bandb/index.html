@@ -158,10 +158,13 @@ let kittyPowerActive = false;
 // Collision sensitivity knobs (least-invasive):
 // Increase kittyPadX/kittyPadY to make catches/hits more forgiving for kitty.
 // For bombs we use a slightly smaller pad to make them harder to accidentally touch.
-const DEFAULT_KITTY_PAD_X = 8; // px
-const DEFAULT_KITTY_PAD_Y = 4; // px
-const BOMB_KITTY_PAD_X = -6;   // negative = stricter
+const DEFAULT_KITTY_PAD_X = .05; // px
+const DEFAULT_KITTY_PAD_Y = .05; // px
+const BOMB_KITTY_PAD_X = -20;   // negative = stricter
 const BOMB_KITTY_PAD_Y = 0;
+// Single sensitivity knob: increase (>1) to make catches/hits more forgiving, decrease (<1) to make stricter.
+// Change this single number to tune the overall collision area.
+const SENSITIVITY = .025;
 
 // Move Kitty
 function moveKitty(newX) {
@@ -217,8 +220,10 @@ function spawnItem(type) {
     const itemRect = item.getBoundingClientRect();
 
     // Use a padded bounding-box intersection test so sensitivity can be tuned
-    const kittyPadX = (type === 'bomb') ? BOMB_KITTY_PAD_X : DEFAULT_KITTY_PAD_X;
-    const kittyPadY = (type === 'bomb') ? BOMB_KITTY_PAD_Y : DEFAULT_KITTY_PAD_Y;
+  const basePadX = (type === 'bomb') ? BOMB_KITTY_PAD_X : DEFAULT_KITTY_PAD_X;
+  const basePadY = (type === 'bomb') ? BOMB_KITTY_PAD_Y : DEFAULT_KITTY_PAD_Y;
+  const kittyPadX = basePadX * SENSITIVITY;
+  const kittyPadY = basePadY * SENSITIVITY;
 
     const k = {
       left: kittyRect.left - kittyPadX,
