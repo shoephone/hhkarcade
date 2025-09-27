@@ -182,7 +182,7 @@
   const visualScale = 3;
   // hitMargin expands the horizontal collision tolerance so paddles don't need perfect alignment
   // Increase slightly for easier hits; try values like 8-20. Lower values = less forgiving.
-  const hitMargin = .005;
+  const hitMargin = .000001;
   // AI tuning knobs
   // reactionDelay: number of frames the AI waits between reacting (higher = more sluggish)
   const aiReactionDelay = 0; // 0 = react every frame; try 4-8 for noticeable delay
@@ -394,3 +394,4 @@
   </script>
 </body>
 </html>
+
