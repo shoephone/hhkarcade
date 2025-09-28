@@ -4,122 +4,125 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
 <title>Bows & Bombs</title>
-<style>
-  html, body {
-    touch-action: none;
-    -ms-touch-action: none;
-    overscroll-behavior: none;
-    -webkit-user-select: none; 
-    user-select: none;
-  }
-  body {
-    margin: 0;
-    background: pink;
-    overflow: hidden;
-    font-family: sans-serif;
-  }
-
-  #game {
-    position: relative;
-    width: 100vw;
-    height: 100dvh;
-    overflow: hidden;
-  }
-
-  #kitty {
-    position: absolute;
-    bottom: 0; /* default for desktop */
-    left: 50%;
-    transform: translateX(-50%);
-    width: 120px;
-    z-index: 5;
-    transition: transform 0.2s, bottom 0.2s;
-  }
-
-  #clouds {
-    display: none; /* hidden on desktop */
-  }
-
-  @media (max-width: 768px) {
-    #clouds {
-      display: block;
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      height: auto;
-      object-fit: cover;
-      z-index: 3;
+  <style>
+    html, body {
+      touch-action: none;
+      -ms-touch-action: none;
+      overscroll-behavior: none;
+      -webkit-user-select: none; 
+      user-select: none;
     }
+    
+    body {
+      margin: 0;
+      background: pink;
+      overflow: hidden;
+      font-family: sans-serif;
+    }
+
+    #game {
+      position: relative;
+      width: 100vw;
+      height: 100dvh;
+      overflow: hidden;
+    }
+
     #kitty {
-      bottom: 80px; /* float above clouds */
+      position: absolute;
+      bottom: 0; /* default for desktop */
+      left: 50%;
+      transform: translateX(-50%);
+      width: 120px;
+      z-index: 5;
+      transition: transform 0.2s, bottom 0.2s;
     }
-  }
 
-  .item {
-    position: absolute;
-    top: 0;
-    width: 60px;
-    animation: wiggle 1s infinite ease-in-out;
-  }
+    #clouds {
+      display: none; /* hidden on desktop */
+    }
 
-  @keyframes wiggle {
-    0% { transform: rotate(-5deg); }
-    50% { transform: rotate(5deg); }
-    100% { transform: rotate(-5deg); }
-  }
+    @media (max-width: 768px) {
+      #clouds {
+        display: block;
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: auto;
+        object-fit: cover;
+        z-index: 3;
+      }
+      #kitty {
+        bottom: 80px; /* float above clouds */
+      }
+    }
 
-  #score, #highscore {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    font-size: 26px;
-    color: white;
-    z-index: 10;
-  }
+    .item {
+      position: absolute;
+      top: 0;
+      width: 60px;
+      animation: wiggle 1s infinite ease-in-out;
+    }
 
-  #highscore { top: 40px; }
+    @keyframes wiggle {
+      0% { transform: rotate(-5deg); }
+      50% { transform: rotate(5deg); }
+      100% { transform: rotate(-5deg); }
+    }
 
-  #specialCounter, #goldenCounter {
-    display: flex;
-    align-items: center;
-    font-size: 20px;
-    color: white;
-  }
+    #score, #highscore {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-size: 26px;
+      color: white;
+      z-index: 10;
+    }
 
-  #specialCounter img, #goldenCounter img {
-    width: 32px;
-    height: 32px;
-    margin-right: 5px;
-  }
+    #highscore { 
+      top: 40px; 
+    }
 
-  #popup {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 140px;
-    transform: translate(-50%, -50%) scale(0);
-    opacity: 0;
-    z-index: 20;
-    pointer-events: none;
-    transition: transform 0.5s cubic-bezier(.68,-0.55,.27,1.55), opacity 0.5s ease-in-out;
-  }
+    #specialCounter, #goldenCounter {
+      display: flex;
+      align-items: center;
+      font-size: 20px;
+      color: white;
+    }
 
-  #popup.show {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 1;
-  }
+    #specialCounter img, #goldenCounter img {
+      width: 32px;
+      height: 32px;
+      margin-right: 5px;
+    }
 
-  .confetti {
-    position: absolute;
-    width: 8px;
-    height: 8px;
-    background-color: yellow;
-    z-index: 30;
-    pointer-events: none;
-    opacity: 0.9;
-  }
-</style>
+    #popup {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 140px;
+      transform: translate(-50%, -50%) scale(0);
+      opacity: 0;
+      z-index: 20;
+      pointer-events: none;
+      transition: transform 0.5s cubic-bezier(.68,-0.55,.27,1.55), opacity 0.5s ease-in-out;
+    }
+
+    #popup.show {
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 1;
+    }
+
+    .confetti {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      background-color: yellow;
+      z-index: 30;
+      pointer-events: none;
+      opacity: 0.9;
+    }
+  </style>
 </head>
 <body>
 
@@ -144,81 +147,125 @@
 </div>
 
 <script>
-(function () {
-  window.addEventListener('gesturestart', e => e.preventDefault());
-  document.addEventListener('touchstart', e => { if(e.touches && e.touches.length > 1) e.preventDefault(); }, { passive: false });
-  let ___lastTouchEnd = 0;
-  document.addEventListener('touchend', e => { const now = Date.now(); if(now - ___lastTouchEnd <= 300) e.preventDefault(); ___lastTouchEnd = now; }, false);
-  window.addEventListener('wheel', e => { if(e.ctrlKey || e.metaKey) e.preventDefault(); }, { passive: false });
-  document.addEventListener('keydown', e => { if((e.ctrlKey || e.metaKey) && ['+','-','=','0'].includes(e.key)) e.preventDefault(); });
-})();
+  // Prevent zoom and unwanted gestures
+  (function () {
+    window.addEventListener('gesturestart', e => e.preventDefault());
+    document.addEventListener('touchstart', e => { 
+      if (e.touches && e.touches.length > 1) e.preventDefault(); 
+    }, { passive: false });
+    
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', e => { 
+      const now = Date.now(); 
+      if (now - lastTouchEnd <= 300) e.preventDefault(); 
+      lastTouchEnd = now; 
+    }, false);
+    
+    window.addEventListener('wheel', e => { 
+      if (e.ctrlKey || e.metaKey) e.preventDefault(); 
+    }, { passive: false });
+    
+    document.addEventListener('keydown', e => { 
+      if ((e.ctrlKey || e.metaKey) && ['+','-','=','0'].includes(e.key)) e.preventDefault(); 
+    });
+  })();
 
-const game = document.getElementById("game");
-const kitty = document.getElementById("kitty");
-const scoreEl = document.getElementById("score");
-const highscoreEl = document.getElementById("highscore");
-const popup = document.getElementById("popup");
-const specialCounter = document.getElementById("specialCounter");
-const goldenCounter = document.getElementById("goldenCounter");
-const specialCount = document.getElementById("specialCount");
-const goldenCount = document.getElementById("goldenCount");
+  // Game elements
+  const game = document.getElementById("game");
+  const kitty = document.getElementById("kitty");
+  const scoreEl = document.getElementById("score");
+  const highscoreEl = document.getElementById("highscore");
+  const popup = document.getElementById("popup");
+  const specialCounter = document.getElementById("specialCounter");
+  const goldenCounter = document.getElementById("goldenCounter");
+  const specialCount = document.getElementById("specialCount");
+  const goldenCount = document.getElementById("goldenCount");
 
-let score = 0;
-let highScore = localStorage.getItem("highScore") ? parseInt(localStorage.getItem("highScore")) : 0;
-highscoreEl.textContent = "High Score: " + highScore;
+  // Game state
+  let score = 0;
+  let highScore = localStorage.getItem("highScore") ? 
+    parseInt(localStorage.getItem("highScore")) : 0;
+  let specials = 0;
+  let goldenSpecials = 0;
+  let kittyX = window.innerWidth / 2;
+  let kittyPowerActive = false;
 
-let specials = 0;
-let goldenSpecials = 0;
-let kittyX = window.innerWidth / 2;
-let kittyPowerActive = false;
+  // Collision settings
+  const DEFAULT_KITTY_PAD_X = 0.05; 
+  const DEFAULT_KITTY_PAD_Y = 0.05; 
+  const BOMB_KITTY_PAD_X = -20;   
+  const BOMB_KITTY_PAD_Y = -20;
+  const SENSITIVITY = 0.025;
 
-// Collision sensitivity
-const DEFAULT_KITTY_PAD_X = .05; 
-const DEFAULT_KITTY_PAD_Y = .05; 
-const BOMB_KITTY_PAD_X = -20;   
-const BOMB_KITTY_PAD_Y = -20;
-const SENSITIVITY = .025;
+  // Initialize high score display
+  highscoreEl.textContent = "High Score: " + highScore;
 
-// Move Kitty
-function moveKitty(newX) {
-  const minX = -kitty.offsetWidth/2;
-  const maxX = game.clientWidth - kitty.offsetWidth/2;
-  kittyX = Math.max(minX, Math.min(maxX, newX));
-  kitty.style.left = kittyX + "px";
-}
+  // Kitty movement function
+  function moveKitty(newX) {
+    const minX = -kitty.offsetWidth / 2;
+    const maxX = game.clientWidth - kitty.offsetWidth / 2;
+    kittyX = Math.max(minX, Math.min(maxX, newX));
+    kitty.style.left = kittyX + "px";
+  }
 
-// Controls
-document.addEventListener("keydown", e => {
-  if(e.key === "ArrowLeft") moveKitty(kittyX - 30);
-  if(e.key === "ArrowRight") moveKitty(kittyX + 30);
-});
-game.addEventListener("touchstart", e => {
-  const touchX = e.touches[0].clientX;
-  if(touchX < window.innerWidth / 2) moveKitty(kittyX - 40);
-  else moveKitty(kittyX + 40);
-});
+  // Controls
+  document.addEventListener("keydown", e => {
+    if (e.key === "ArrowLeft") moveKitty(kittyX - 30);
+    if (e.key === "ArrowRight") moveKitty(kittyX + 30);
+  });
 
-// Spawn items
-function spawnItem(type) {
-  const item = document.createElement("img");
-  if(type==="bow") item.src="images/bow.png";
-  if(type==="bow-golden") item.src="images/bow-golden.png";
-  if(type==="bomb") item.src="images/bomb.png";
-  if(type==="powerup") item.src="images/powerup.png";
+  game.addEventListener("touchstart", e => {
+    const touchX = e.touches[0].clientX;
+    if (touchX < window.innerWidth / 2) moveKitty(kittyX - 40);
+    else moveKitty(kittyX + 40);
+  });
 
-  item.classList.add("item");
-  item.style.left = Math.random() * (window.innerWidth - 100) + "px";
-  game.appendChild(item);
+  // Item spawning and collision detection
+  function spawnItem(type) {
+    const item = document.createElement("img");
+    
+    // Set item image based on type
+    const imageMap = {
+      "bow": "images/bow.png",
+      "bow-golden": "images/bow-golden.png",
+      "bomb": "images/bomb.png",
+      "powerup": "images/powerup.png"
+    };
+    item.src = imageMap[type];
 
-  let y = 0;
-  let speed = 5;
-  if(type === "bomb") { speed = 4 + Math.random()*6; item.style.width = "72px"; }
-  if(type === "powerup") speed = 10;
+    item.classList.add("item");
+    item.style.left = Math.random() * (window.innerWidth - 100) + "px";
+    game.appendChild(item);
 
-  const fall = setInterval(()=> {
-    y += speed;
-    item.style.top = y + "px";
+    // Set item properties
+    let y = 0;
+    let speed = 5;
+    if (type === "bomb") { 
+      speed = 4 + Math.random() * 6; 
+      item.style.width = "72px"; 
+    }
+    if (type === "powerup") speed = 10;
 
+    // Animation loop
+    const fall = setInterval(() => {
+      y += speed;
+      item.style.top = y + "px";
+
+      if (checkCollision(item, type)) {
+        handleCollision(item, type);
+        if (game.contains(item)) game.removeChild(item);
+        clearInterval(fall);
+        return;
+      }
+
+      if (y > window.innerHeight) {
+        if (game.contains(item)) game.removeChild(item);
+        clearInterval(fall);
+      }
+    }, 30);
+  }
+
+  function checkCollision(item, type) {
     const kittyRect = kitty.getBoundingClientRect();
     const itemRect = item.getBoundingClientRect();
 
@@ -227,146 +274,160 @@ function spawnItem(type) {
     const kittyPadX = basePadX * SENSITIVITY;
     const kittyPadY = basePadY * SENSITIVITY;
 
-    const k = {
+    const kittyBounds = {
       left: kittyRect.left - kittyPadX,
       right: kittyRect.right + kittyPadX,
       top: kittyRect.top - kittyPadY,
       bottom: kittyRect.bottom + kittyPadY
     };
-    const it = {
+    
+    const itemBounds = {
       left: itemRect.left,
       right: itemRect.right,
       top: itemRect.top,
       bottom: itemRect.bottom
     };
 
-    const intersects = !(it.right < k.left || it.left > k.right || it.bottom < k.top || it.top > k.bottom);
-
-    if (intersects) {
-      if (type === "bomb") {
-        if (!kittyPowerActive) resetGame();
-        if (game.contains(item)) game.removeChild(item);
-        clearInterval(fall);
-        return;
-      }
-
-      if(type==="bow"){
-        score++;
-        scoreEl.textContent = "Bows:"+score;
-        if(score > highScore){
-          highScore = score;
-          highscoreEl.textContent = "High Score: "+highScore;
-          localStorage.setItem("highScore", highScore);
-        }
-        if(!kittyPowerActive){
-          kitty.style.transform="translateX(-50%) scale(1.25)";
-          setTimeout(()=>{ kitty.style.transform="translateX(-50%) scale(1)"; },150);
-        }
-        if(score % 10 === 0){
-          specials++;
-          specialCounter.style.display="flex";
-          specialCount.textContent = specials;
-          showPopup();
-          launchConfetti(30);
-        }
-      } else if(type==="bow-golden"){
-        goldenSpecials++;
-        goldenCounter.style.display="flex";
-        goldenCount.textContent = goldenSpecials;
-      } else if(type==="powerup" && !kittyPowerActive){
-        kittyPowerActive = true;
-        kitty.src="images/golden-special.png";
-        kitty.style.bottom = "100px";  // kitty rises slightly
-        kitty.style.transform="translateX(-50%) scale(2)";
-        setTimeout(()=>{
-          kitty.src="images/hello-kitty.png";
-          kitty.style.transform="translateX(-50%) scale(1)";
-          kitty.style.bottom = window.innerWidth <= 768 ? "80px" : "0px";
-          kittyPowerActive = false;
-        },5000);
-      }
-
-      if(game.contains(item)) game.removeChild(item);
-      clearInterval(fall);
-    }
-
-    if(y > window.innerHeight){
-      if(game.contains(item)) game.removeChild(item);
-      clearInterval(fall);
-    }
-  },30);
-}
-
-// Spawners
-setInterval(()=>spawnItem("bow"), 1500);
-setInterval(()=>spawnItem("bow-golden"), 4000);
-setInterval(()=>spawnItem("powerup"), 30000);
-
-function startBombSpawner(){
-  const baseDelay = 9000;
-  setInterval(()=>{ spawnItem("bomb"); if(Math.random() < 0.12) startBombFrenzy(); }, baseDelay);
-}
-
-let bombFrenzyActive = false;
-function startBombFrenzy(){
-  if(bombFrenzyActive) return;
-  bombFrenzyActive = true;
-  const frenzyDuration = 10000;
-  const frenzyInterval = 1500;
-  const id = setInterval(()=>{ spawnItem("bomb"); }, frenzyInterval);
-  setTimeout(()=>{ clearInterval(id); bombFrenzyActive=false; }, frenzyDuration);
-}
-startBombSpawner();
-
-function showPopup(){
-  popup.classList.add("show");
-  setTimeout(()=>{ popup.classList.remove("show"); },1000);
-}
-
-function launchConfetti(amount){
-  for(let i=0;i<amount;i++){
-    const confetti = document.createElement("div");
-    confetti.classList.add("confetti");
-    confetti.style.backgroundColor = `hsl(${Math.random()*360},80%,60%)`;
-    confetti.style.left=Math.random()*window.innerWidth+"px";
-    confetti.style.top="0px";
-    game.appendChild(confetti);
-
-    let y=0;
-    const fall=setInterval(()=>{
-      y += Math.random()*7+3;
-      confetti.style.top=y+"px";
-      confetti.style.transform=`rotate(${y*5}deg)`;
-      if(y>window.innerHeight){
-        if(game.contains(confetti)) game.removeChild(confetti);
-        clearInterval(fall);
-      }
-    },30);
+    return !(itemBounds.right < kittyBounds.left || 
+             itemBounds.left > kittyBounds.right || 
+             itemBounds.bottom < kittyBounds.top || 
+             itemBounds.top > kittyBounds.bottom);
   }
-}
 
-function resetGame(){
-  score=0;
-  highScore=localStorage.getItem("highScore") ? parseInt(localStorage.getItem("highScore")) : 0;
-  scoreEl.textContent="Bows: "+score;
-  highscoreEl.textContent="High Score: "+highScore;
-  specials=0;
-  goldenSpecials=0;
-  specialCount.textContent=specials;
-  goldenCount.textContent=goldenSpecials;
-  specialCounter.style.display="none";
-  goldenCounter.style.display="none";
+  function handleCollision(item, type) {
+    if (type === "bomb") {
+      if (!kittyPowerActive) resetGame();
+      return;
+    }
 
-  const toRemove=Array.from(game.querySelectorAll('.item,.confetti'));
-  toRemove.forEach(el=>{ if(game.contains(el)) game.removeChild(el); });
+    if (type === "bow") {
+      score++;
+      scoreEl.textContent = "Bows: " + score;
+      
+      if (score > highScore) {
+        highScore = score;
+        highscoreEl.textContent = "High Score: " + highScore;
+        localStorage.setItem("highScore", highScore);
+      }
+      
+      if (!kittyPowerActive) {
+        kitty.style.transform = "translateX(-50%) scale(1.25)";
+        setTimeout(() => {
+          kitty.style.transform = "translateX(-50%) scale(1)";
+        }, 150);
+      }
+      
+      if (score % 10 === 0) {
+        specials++;
+        specialCounter.style.display = "flex";
+        specialCount.textContent = specials;
+        showPopup();
+        launchConfetti(30);
+      }
+    } else if (type === "bow-golden") {
+      goldenSpecials++;
+      goldenCounter.style.display = "flex";
+      goldenCount.textContent = goldenSpecials;
+    } else if (type === "powerup" && !kittyPowerActive) {
+      activateKittyPower();
+    }
+  }
 
-  popup.classList.remove('show');
+  function activateKittyPower() {
+    kittyPowerActive = true;
+    kitty.src = "images/golden-special.png";
+    kitty.style.bottom = "100px";
+    kitty.style.transform = "translateX(-50%) scale(2)";
+    
+    setTimeout(() => {
+      kitty.src = "images/hello-kitty.png";
+      kitty.style.transform = "translateX(-50%) scale(1)";
+      kitty.style.bottom = window.innerWidth <= 768 ? "80px" : "0px";
+      kittyPowerActive = false;
+    }, 5000);
+  }
 
-  kitty.src="images/hello-kitty.png";
-  kitty.style.transform="translateX(-50%) scale(1)";
-  kitty.style.bottom = window.innerWidth <= 768 ? "80px" : "0px";
-  kittyPowerActive=false;
-}
+  // Game spawners and special effects
+  setInterval(() => spawnItem("bow"), 1500);
+  setInterval(() => spawnItem("bow-golden"), 4000);
+  setInterval(() => spawnItem("powerup"), 30000);
+
+  function startBombSpawner() {
+    const baseDelay = 9000;
+    setInterval(() => { 
+      spawnItem("bomb"); 
+      if (Math.random() < 0.12) startBombFrenzy(); 
+    }, baseDelay);
+  }
+
+  let bombFrenzyActive = false;
+  function startBombFrenzy() {
+    if (bombFrenzyActive) return;
+    bombFrenzyActive = true;
+    const frenzyDuration = 10000;
+    const frenzyInterval = 1500;
+    const id = setInterval(() => { spawnItem("bomb"); }, frenzyInterval);
+    setTimeout(() => { 
+      clearInterval(id); 
+      bombFrenzyActive = false; 
+    }, frenzyDuration);
+  }
+  startBombSpawner();
+
+  function showPopup() {
+    popup.classList.add("show");
+    setTimeout(() => { popup.classList.remove("show"); }, 1000);
+  }
+
+  function launchConfetti(amount) {
+    for (let i = 0; i < amount; i++) {
+      const confetti = document.createElement("div");
+      confetti.classList.add("confetti");
+      confetti.style.backgroundColor = `hsl(${Math.random() * 360}, 80%, 60%)`;
+      confetti.style.left = Math.random() * window.innerWidth + "px";
+      confetti.style.top = "0px";
+      game.appendChild(confetti);
+
+      let y = 0;
+      const fall = setInterval(() => {
+        y += Math.random() * 7 + 3;
+        confetti.style.top = y + "px";
+        confetti.style.transform = `rotate(${y * 5}deg)`;
+        if (y > window.innerHeight) {
+          if (game.contains(confetti)) game.removeChild(confetti);
+          clearInterval(fall);
+        }
+      }, 30);
+    }
+  }
+
+  function resetGame() {
+    score = 0;
+    highScore = localStorage.getItem("highScore") ? 
+      parseInt(localStorage.getItem("highScore")) : 0;
+    scoreEl.textContent = "Bows: " + score;
+    highscoreEl.textContent = "High Score: " + highScore;
+    specials = 0;
+    goldenSpecials = 0;
+    specialCount.textContent = specials;
+    goldenCount.textContent = goldenSpecials;
+    specialCounter.style.display = "none";
+    goldenCounter.style.display = "none";
+
+    // Remove all items and confetti
+    const toRemove = Array.from(game.querySelectorAll('.item, .confetti'));
+    toRemove.forEach(el => { 
+      if (game.contains(el)) game.removeChild(el); 
+    });
+
+    popup.classList.remove('show');
+
+    // Reset kitty appearance
+    kitty.src = "images/hello-kitty.png";
+    kitty.style.transform = "translateX(-50%) scale(1)";
+    kitty.style.bottom = window.innerWidth <= 768 ? "80px" : "0px";
+    kittyPowerActive = false;
+  }
 </script>
 
 </body>
