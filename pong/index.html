@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Pong – Hannah's Hello Kitty Arcade</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-
 <style>
 :root {
   --accent: #ff6fa3;
@@ -73,7 +72,7 @@ button:hover {
 /* BACK BUTTON */
 #backBtn {
   position: fixed;
-  top: 90px;
+  top: 50px;
   left: 10px;
   z-index: 1000;
   padding: 10px 22px;
@@ -92,7 +91,7 @@ button:hover {
 #backBtn span { display: inline; }
 
 @media (max-width: 768px) {
-  #backBtn { top: 80px; padding: 8px 14px; font-size: clamp(16px, 4vw, 20px); }
+  #backBtn { top: 40px; padding: 8px 14px; font-size: clamp(16px, 4vw, 20px); }
   #backBtn span { display: none; }
   #backBtn::after { content: "←"; display: inline-block; }
 }
@@ -197,8 +196,29 @@ function resizeCanvas(){
   gameHeight = targetH;
 }
 
-canvas.addEventListener('touchstart', e => { e.preventDefault(); }, {passive:false});
-canvas.addEventListener('touchmove', e => { e.preventDefault(); }, {passive:false});
+canvas.addEventListener('touchstart', e => e.preventDefault(), {passive:false});
+canvas.addEventListener('touchmove', e => e.preventDefault(), {passive:false});
+
+// --- Mobile tap controls for 2 players ---
+canvas.addEventListener('touchstart', e=>{
+  for(let touch of e.touches){
+    const x = touch.clientX;
+    const y = touch.clientY;
+    if(y > gameHeight/2){ // bottom half → Player 1
+      if(x < gameWidth/2) keys['ArrowLeft']=true;
+      else keys['ArrowRight']=true;
+    } else { // top half → Player 2
+      if(x < gameWidth/2) keys['a']=true;
+      else keys['d']=true;
+    }
+  }
+});
+canvas.addEventListener('touchend', e=>{
+  keys['ArrowLeft']=false;
+  keys['ArrowRight']=false;
+  keys['a']=false;
+  keys['d']=false;
+});
 
 function draw(){
   ctx.clearRect(0,0,gameWidth,gameHeight);
@@ -286,13 +306,13 @@ startBtn.addEventListener("click", ()=>{
   document.body.classList.add('playing');
   menu.style.display="none";
   canvas.style.display="block";
-  backBtn.style.display = "inline-block";
+  backBtn.style.display="inline-block";
   resizeCanvas();
   resetGame();
   gameLoop();
 });
 
-// Back to character select
+// Back button functionality
 backBtn.addEventListener("click", ()=>{
   menu.style.display="block";
   canvas.style.display="none";
