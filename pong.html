@@ -20,9 +20,10 @@ body {
   background: var(--bg);
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start; /* top-align the menu */
   height: 100vh;
   overflow: hidden;
+  padding-top: 10px; /* small spacing from top */
 }
 
 body.playing {
@@ -41,12 +42,12 @@ canvas {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start; /* align items to top */
   color: var(--accent);
-  gap: 16px;
+  gap: 10px; /* reduced spacing */
   width: 100%;
   max-width: 400px;
-  padding: 10px;
+  padding: 1px; /* reduced padding */
   box-sizing: border-box;
 }
 
@@ -54,6 +55,7 @@ canvas {
   max-width: 180px;
   height: auto;
   margin: 0;
+  margin-bottom: 0; /* small space below logo */
 }
 
 button {
@@ -78,7 +80,7 @@ button:hover {
 .character-select {
   width: 100%;
 }
-.character-select p { margin: 5px 0; text-align: center; }
+.character-select p { margin: 0; text-align: center; }
 .character-select div {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -86,7 +88,7 @@ button:hover {
   justify-items: center;
 }
 .character-select img {
-  width: 70px;
+  width: 80px;
   height: 80px;
   border: 2px solid transparent;
   border-radius: 8px;
@@ -283,4 +285,3 @@ startBtn.addEventListener("click", ()=>{
 </script>
 </body>
 </html>
-
