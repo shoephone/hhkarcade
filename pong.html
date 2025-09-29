@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Pong – Hannah's Hello Kitty Arcade</title>
+<title>Pong</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -57,6 +57,7 @@ canvas {
 }
 
 button {
+  font-family: 'Press Start 2P', cursive;
   padding: 12px 24px;
   font-size: clamp(0.7rem, 2.5vw, 1.1rem);
   border-radius: var(--button-radius);
@@ -106,6 +107,10 @@ button:hover {
     <div id="topChoices"></div>
   </div>
 
+<div style="text-align:center; margin:10px 0;">
+  <label>Difficulty: <input type="range" id="cpuRange" min="1" max="10" value="4"></label>
+</div>
+
   <div>
     <label><input type="radio" name="mode" value="1" checked> 1 Player</label>
     <label><input type="radio" name="mode" value="2"> 2 Players</label>
@@ -121,6 +126,7 @@ const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 const menu = document.getElementById("menu");
 const startBtn = document.getElementById("startBtn");
+const cpuRange = document.getElementById("cpuRange");
 
 const bottomChoices = document.getElementById("bottomChoices");
 const topChoices = document.getElementById("topChoices");
@@ -144,6 +150,7 @@ const ballSize = 15;
 let player1, player2, ball;
 let score1, score2;
 let bounceBottom = 0, bounceTop = 0;
+let rallyCount = 0;
 
 function createCharacterChoices(container, setImg, setName){
   container.innerHTML = "";
@@ -162,14 +169,15 @@ function createCharacterChoices(container, setImg, setName){
 createCharacterChoices(bottomChoices, img=>bottomImg=img, name=>bottomName=name);
 createCharacterChoices(topChoices, img=>topImg=img, name=>topName=name);
 
-// Game setup
 function resetGame(){
   player1 = {x: gameWidth/2 - paddleWidth/2, y: gameHeight - paddleHeight - 10};
   player2 = {x: gameWidth/2 - paddleWidth/2, y: 10};
   ball = {x: gameWidth/2 - ballSize/2, y: gameHeight/2 - ballSize/2, dx: 4, dy: 4};
   score1 = 0; score2 = 0;
   bounceBottom = 0; bounceTop = 0;
+  rallyCount = 0;
 }
+
 function setViewportHeight() {
   const vh = window.innerHeight * 0.01;
   document.documentElement.style.setProperty('--vh', `${vh}px`);
@@ -231,19 +239,10 @@ function draw(){
   ctx.fillStyle = '#fff';
   ctx.fillRect(ball.x, ball.y, ballSize, ballSize);
 
-  // --- Classic Pong Score Placement ---
   ctx.fillStyle = '#ff6fa3';
   ctx.font = "16px 'Press Start 2P'";
-
-  // Top-left: Player 2
-  ctx.textAlign = "left";
   ctx.fillText(`${topName}: ${score2}`, 10, 25);
-
-  // Bottom-right: Player 1
-  ctx.textAlign = "right";
-  ctx.fillText(`${bottomName}: ${score1}`, gameWidth - 10, gameHeight - 10);
-
-  ctx.textAlign = "left"; // reset
+  ctx.fillText(`${bottomName}: ${score1}`, 10, gameHeight-10);
 }
 
 function update(){
@@ -251,11 +250,12 @@ function update(){
   if(keys["ArrowRight"]) player1.x += 6;
   player1.x = Math.max(0, Math.min(gameWidth - paddleWidth, player1.x));
 
+  const cpuSpeed = parseInt(cpuRange.value);
   if(mode===1){
     const target = ball.x + ballSize/2;
     const center = player2.x + paddleWidth/2;
-    if(target < center) player2.x -= 4;
-    else if(target > center) player2.x += 4;
+    if(target < center) player2.x -= cpuSpeed;
+    else if(target > center) player2.x += cpuSpeed;
   } else {
     if(keys["a"]||keys["A"]) player2.x -= 6;
     if(keys["d"]||keys["D"]) player2.x += 6;
@@ -266,24 +266,41 @@ function update(){
   ball.y += ball.dy;
   if(ball.x <= 0 || ball.x + ballSize >= gameWidth) ball.dx *= -1;
 
-  if(ball.y + ballSize >= player1.y && ball.x + ballSize >= player1.x && ball.x <= player1.x + paddleWidth){
+  // ---- Updated collision code ----
+  if(
+    ball.y + ballSize >= player1.y &&
+    ball.y <= player1.y + paddleHeight &&
+    ball.x + ballSize >= player1.x &&
+    ball.x <= player1.x + paddleWidth
+  ){
     ball.dy *= -1;
     ball.y = player1.y - ballSize;
     bounceBottom = 12;
+    rallyCount++;
+    if(Math.abs(ball.dx) < 10) ball.dx *= 1.05;
+    if(Math.abs(ball.dy) < 10) ball.dy *= 1.05;
   }
-  if(ball.y <= player2.y + paddleHeight && ball.x + ballSize >= player2.x && ball.x <= player2.x + paddleWidth){
+
+  if(
+    ball.y <= player2.y + paddleHeight &&
+    ball.y + ballSize >= player2.y &&
+    ball.x + ballSize >= player2.x &&
+    ball.x <= player2.x + paddleWidth
+  ){
     ball.dy *= -1;
     ball.y = player2.y + paddleHeight;
     bounceTop = 12;
+    rallyCount++;
+    if(Math.abs(ball.dx) < 10) ball.dx *= 1.05;
+    if(Math.abs(ball.dy) < 10) ball.dy *= 1.05;
   }
+  // -------------------------------
 
   bounceBottom *= 0.6;
   bounceTop *= 0.6;
 
-  if(mode === 2){
-    if(ball.y < 0){ score1++; resetBall(1); }
-  }
-  if(ball.y > gameHeight){ score2++; resetBall(-1); }
+  if(ball.y < 0){ score1++; resetBall(1); rallyCount=0; }
+  if(ball.y > gameHeight){ score2++; resetBall(-1); rallyCount=0; }
 }
 
 function resetBall(direction){
