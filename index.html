@@ -2,78 +2,234 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Hannah's Hello Kitty Arcade</title>
 
-<!-- Favicon -->
 <link rel="icon" type="image/png" href="images/favicon.png">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 
 <style>
-  :root{--accent:#ff6fa3}
-  body{margin:0;font-family:sans-serif;background:linear-gradient(180deg,#fff,#f7f0f8);height:100vh;display:flex;align-items:center;justify-content:center}
-  .menu{width:100%;max-width:900px;padding:24px;background:#fff;border: none;text-align:center}
-  h1{size: ; margin:0 0 1px;color:#333}
-  .logo-img{max-width:300px;height: auto}
-  p.lead{margin:0 0 18px;color:#666}
-  .choices{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
-  .card{width:260px;text-align:center;cursor:pointer;padding:8px; border: none; background-color: transparent;}
-  .card img{width:240px;height:160px;object-fit:cover; border: none}
-  .card:hover img{transform:translateY(-6px);border: none}
-  .card .title{font-weight:700;margin-top:10px}
-  .card .desc{color:#666;font-size:13px;margin-top:6px}
-  button.back{position:fixed;left:14px;top:80px;padding:10px 14px;border: none;cursor:pointer;display:none}
-  iframe.player{width:100vw;height:100vh;border:0;display:none}
+:root { 
+  --accent: #ff6fa3;
+  --logo-top-gap: 15px;      /* final top gap after jump */
+  --text-gap: 20px;          /* gap between logo and text */
+  --buttons-gap: 30px;       /* gap between text and buttons */
+}
+
+body {
+  margin: 0;
+  font-family: 'Press Start 2P', cursive;
+  background: #000;
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-start;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.menu {
+  width: 100%;
+  max-width: 900px;
+  padding: 16px;
+  text-align: center;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Logo wrapper starts centered */
+.logo-wrapper {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: transform 1s ease, top 1s ease;
+  z-index: 2;
+}
+.logo-wrapper.to-top {
+  top: var(--logo-top-gap);
+  transform: translateX(-50%) scale(0.5);
+}
+
+/* Logo media */
+.logo-video, .logo-img {
+  max-height: 50vh;   /* large starting size */
+  height: auto;
+  width: auto;
+}
+.logo-img { display: none; }
+
+/* Lead text */
+.lead {
+  margin-top: 40vh;  /* start off-screen */
+  margin-bottom: 0;
+  color: var(--accent);
+  font-size: clamp(1rem, 4vw, 3rem);
+  min-height: 1.5em;
+  white-space: nowrap;
+  overflow: hidden;
+  border-right: 2px solid var(--accent);
+  visibility: hidden;
+  align-items: center;
+}
+
+/* Arcade-style text buttons */
+.choices {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  margin-top: var(--buttons-gap);
+  z-index: 1;
+}
+.choices.show { opacity: 1; }
+
+.choices button {
+  background: #111;
+  color: var(--accent);
+  border: 2px solid var(--accent);
+  padding: 16px 32px;
+  font-family: 'Press Start 2P', cursive;
+  font-size: clamp(0.8rem, 3vw, 1.2rem);
+  cursor: pointer;
+  border-radius: 8px;
+  transform: scale(0);
+  opacity: 0;
+  transition: transform 0.3s, opacity 0.3s, background 0.2s;
+}
+.choices button.show {
+  transform: scale(1);
+  opacity: 1;
+}
+.choices button:hover {
+  background: var(--accent);
+  color: #000;
+}
+
+/* Back button */
+button.back {
+  position: fixed;
+  left: 14px;
+  top: 70px;
+  padding: 10px 14px;
+  border: none;
+  cursor: pointer;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+  display: none;
+  font-family: 'Press Start 2P', cursive;
+  z-index: 1000;
+}
+
+/* Safe-area iframe */
+iframe.player {
+  position: fixed;
+  top: env(safe-area-inset-top, 0px);
+  left: env(safe-area-inset-left, 0px);
+  width: calc(100vw - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
+  height: calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+  border: 0;
+  display: none;
+  background: #000;
+  z-index: 999;
+}
 </style>
 </head>
 <body>
-  <button class="back" id="backBtn">← Back</button>
-  <div class="menu" id="menu">
-    <h2>Welcome to</h2>
-    
-    <!-- Replace text with image -->
-    <img src="images/x-icon.png" alt="Hannah's Hello Kitty Arcade" class="logo-img">
-      
-    <p class="lead">Choose a game:</p>
-    <div class="choices">
-      <button class="card" id="playPong">
-        <img src="images/pong.png" alt="Pong">
-        <div class="title">Pong</div>
-      </button>
-      <button class="card" id="playBandB">
-        <img src="images/bowsbombs.png" alt="Bows & Bombs">
-        <div class="title">Bows & Bombs</div>
-      </button>
-    </div>
+<button class="back" id="backBtn">← Back</button>
+
+<div class="menu" id="menu">
+  <!-- Logo -->
+  <div class="logo-wrapper" id="logoWrapper">
+    <video src="images/header.mp4" class="logo-video" autoplay muted></video>
+    <img src="images/header.png" class="logo-img" alt="X Arcade">
   </div>
 
-  <iframe id="playerFrame" class="player" sandbox="allow-same-origin allow-scripts allow-forms"></iframe>
+  <!-- Typing lead -->
+  <p class="lead" id="lead">Choose a game:</p>
 
-  <script>
-    const menu = document.getElementById('menu');
-    const backBtn = document.getElementById('backBtn');
-    const iframe = document.getElementById('playerFrame');
+  <!-- Game buttons -->
+  <div class="choices" id="choices">
+    <button id="playPong">PONG</button>
+    <button id="playBandB">BOWS & BOMBS</button>
+  </div>
+</div>
 
-    function openGame(path){
-      menu.style.display = 'none';
-      iframe.style.display = 'block';
-      backBtn.style.display = 'inline-block';
-      iframe.src = path;
-      window.scrollTo(0,0);
-    }
+<iframe id="playerFrame" class="player" sandbox="allow-same-origin allow-scripts allow-forms"></iframe>
 
-    document.getElementById('playPong').addEventListener('click', ()=> openGame('pong/index.html'));
-    document.getElementById('playBandB').addEventListener('click', ()=> openGame('bandb/index.html'));
+<script>
+const menu = document.getElementById('menu');
+const backBtn = document.getElementById('backBtn');
+const iframe = document.getElementById('playerFrame');
+const logoWrapper = document.getElementById('logoWrapper');
+const logoVideo = logoWrapper.querySelector('.logo-video');
+const logoImg = logoWrapper.querySelector('.logo-img');
+const lead = document.getElementById('lead');
+const choices = document.getElementById('choices');
 
-    backBtn.addEventListener('click', ()=>{
-      iframe.src = 'about:blank';
-      iframe.style.display = 'none';
-      backBtn.style.display = 'none';
-      menu.style.display = 'block';
-      window.scrollTo(0,0);
-    });
-  </script>
+// Logo animation sequence
+logoVideo.addEventListener('ended', () => {
+  logoVideo.style.display = 'none';
+  logoImg.style.display = 'block';
+
+  setTimeout(() => {
+    // Jump logo to top
+    logoWrapper.classList.add('to-top');
+
+    setTimeout(() => {
+      // Show typing text
+      lead.style.visibility = 'visible';
+      let i = 0;
+      const text = lead.textContent;
+      lead.textContent = '';
+      function type() {
+        if (i < text.length) {
+          lead.textContent += text.charAt(i);
+          i++;
+          setTimeout(type, 60);
+        } else {
+          lead.style.borderRight = 'none';
+          // Reveal buttons
+          choices.classList.add('show');
+          const buttons = choices.querySelectorAll('button');
+          buttons.forEach((btn, idx) => {
+            setTimeout(() => btn.classList.add('show'), idx * 300);
+          });
+        }
+      }
+      type();
+    }, 500);
+  }, 500);
+});
+
+// Open game
+function openGame(path) {
+  menu.style.display = 'none';
+  iframe.style.display = 'block';
+  backBtn.style.display = 'inline-block';
+  iframe.src = path;
+  window.scrollTo(0,0);
+}
+
+// Button listeners
+document.getElementById('playPong').addEventListener('click', () => openGame('pong/index.html'));
+document.getElementById('playBandB').addEventListener('click', () => openGame('bandb/index.html'));
+
+// Back button
+backBtn.addEventListener('click', () => {
+  iframe.src = 'about:blank';
+  iframe.style.display = 'none';
+  backBtn.style.display = 'none';
+  menu.style.display = 'block';
+  window.scrollTo(0,0);
+});
+</script>
 </body>
 </html>
-
-
-
