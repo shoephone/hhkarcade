@@ -20,7 +20,7 @@ body {
   background: var(--bg);
   display: flex;
   justify-content: center;
-  align-items: flex-start; /* top-align the menu */
+  align-items: flex-start;
   overflow: hidden;
 }
 
@@ -40,12 +40,12 @@ canvas {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start; /* align items to top */
+  justify-content: flex-start;
   color: var(--accent);
-  gap: 10px; /* reduced spacing */
+  gap: 10px;
   width: 100%;
   max-width: 400px;
-  padding: 1px; /* reduced padding */
+  padding: 1px;
   box-sizing: border-box;
 }
 
@@ -53,7 +53,7 @@ canvas {
   max-width: 180px;
   height: auto;
   margin: 0;
-  margin-bottom: 0; /* small space below logo */
+  margin-bottom: 0;
 }
 
 button {
@@ -74,10 +74,7 @@ button:hover {
   transform: scale(1.05);
 }
 
-/* Character grids */
-.character-select {
-  width: 100%;
-}
+.character-select { width: 100%; }
 .character-select p { margin: 0; text-align: center; }
 .character-select div {
   display: grid;
@@ -128,10 +125,16 @@ const startBtn = document.getElementById("startBtn");
 const bottomChoices = document.getElementById("bottomChoices");
 const topChoices = document.getElementById("topChoices");
 
-// Add characters
-const characters = ["images/hello-kitty.png","images/labubu.png","images/kuromi.png","images/coraline.png"];
+// Characters
+const characters = [
+  {src: "images/hello-kitty.png", name: "Hello Kitty"},
+  {src: "images/labubu.png", name: "Labubu"},
+  {src: "images/kuromi.png", name: "Kuromi"},
+  {src: "images/coraline.png", name: "Coraline"}
+];
+
 let bottomImg = null, topImg = null;
-let bottomIndex = null, topIndex = null;
+let bottomName = "", topName = "";
 
 let mode = 1;
 let keys = {};
@@ -142,23 +145,22 @@ let player1, player2, ball;
 let score1, score2;
 let bounceBottom = 0, bounceTop = 0;
 
-// Create character grids
-function createCharacterChoices(container, setImg, setIndex){
+function createCharacterChoices(container, setImg, setName){
   container.innerHTML = "";
-  characters.forEach((src, idx)=>{
+  characters.forEach((ch)=>{
     const img = new Image();
-    img.src = src;
+    img.src = ch.src;
     img.addEventListener("click", ()=>{
       container.querySelectorAll("img").forEach(i=>i.classList.remove("selected"));
       img.classList.add("selected");
       setImg(img);
-      setIndex(idx);
+      setName(ch.name);
     });
     container.appendChild(img);
   });
 }
-createCharacterChoices(bottomChoices, img=>bottomImg=img, idx=>bottomIndex=idx);
-createCharacterChoices(topChoices, img=>topImg=img, idx=>topIndex=idx);
+createCharacterChoices(bottomChoices, img=>bottomImg=img, name=>bottomName=name);
+createCharacterChoices(topChoices, img=>topImg=img, name=>topName=name);
 
 // Game setup
 function resetGame(){
@@ -171,26 +173,10 @@ function resetGame(){
 function setViewportHeight() {
   const vh = window.innerHeight * 0.01;
   document.documentElement.style.setProperty('--vh', `${vh}px`);
-  document.body.style.minHeight = `${window.innerHeight}px`; // ensures body fills screen
+  document.body.style.minHeight = `${window.innerHeight}px`;
 }
-
-// call once
 setViewportHeight();
-// call on resize
 window.addEventListener('resize', setViewportHeight);
-
-// Adjust menu and canvas to fit
-function resizeCanvas(){
-  const designW = 400, designH = 700;
-  const maxH = window.innerHeight - 20; // leave small padding at top/bottom
-  const aspect = designW/designH;
-  const targetH = Math.min(designH, maxH);
-  const targetW = Math.round(targetH * aspect);
-  canvas.style.width = targetW+'px';
-  canvas.style.height = targetH+'px';
-  gameWidth = targetW;
-  gameHeight = targetH;
-}
 
 function resizeCanvas(){
   const designW = 400, designH = 700;
@@ -228,15 +214,36 @@ function draw(){
   if(topImg){
     const h = paddleHeight*4;
     const w = h * (topImg.naturalWidth/topImg.naturalHeight);
-    ctx.drawImage(topImg, player2.x + paddleWidth/2 - w/2, player2.y + paddleHeight + bounceTop, w, h);
+    const x = player2.x + paddleWidth/2 - w/2;
+    const y = player2.y + paddleHeight + bounceTop;
+
+    if(mode === 2){
+      ctx.save();
+      ctx.translate(x + w/2, y + h/2);
+      ctx.rotate(Math.PI);
+      ctx.drawImage(topImg, -w/2, -h/2, w, h);
+      ctx.restore();
+    } else {
+      ctx.drawImage(topImg, x, y, w, h);
+    }
   }
 
   ctx.fillStyle = '#fff';
   ctx.fillRect(ball.x, ball.y, ballSize, ballSize);
+
+  // --- Classic Pong Score Placement ---
   ctx.fillStyle = '#ff6fa3';
-  ctx.font = "20px 'Press Start 2P'";
-  ctx.fillText("P2: "+score2, 10, 25);
-  ctx.fillText("P1: "+score1, 10, gameHeight-10);
+  ctx.font = "16px 'Press Start 2P'";
+
+  // Top-left: Player 2
+  ctx.textAlign = "left";
+  ctx.fillText(`${topName}: ${score2}`, 10, 25);
+
+  // Bottom-right: Player 1
+  ctx.textAlign = "right";
+  ctx.fillText(`${bottomName}: ${score1}`, gameWidth - 10, gameHeight - 10);
+
+  ctx.textAlign = "left"; // reset
 }
 
 function update(){
@@ -273,7 +280,9 @@ function update(){
   bounceBottom *= 0.6;
   bounceTop *= 0.6;
 
-  if(ball.y < 0){ score1++; resetBall(1); }
+  if(mode === 2){
+    if(ball.y < 0){ score1++; resetBall(1); }
+  }
   if(ball.y > gameHeight){ score2++; resetBall(-1); }
 }
 
