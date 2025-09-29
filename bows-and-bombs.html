@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Bows & Bombs – Hannah's Hello Kitty Arcade</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    font-family: 'Press Start 2P', cursive;
+    touch-action: none;
+    -ms-touch-action: none;
+    overscroll-behavior: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  #game {
+    position: relative;
+    width: 100vw;
+    height: 100dvh;
+    overflow: hidden;
+    background: #000;
+  }
+
+  #kitty {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 120px;
+    z-index: 5;
+    transition: transform 0.2s, bottom 0.2s;
+  }
+
+  #clouds {
+    display: none;
+  }
+
+  @media (max-width: 768px) {
+    #clouds {
+      display: block;
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: auto;
+      object-fit: cover;
+      z-index: 3;
+    }
+    #kitty { bottom: 80px; }
+  }
+
+  .item {
+    position: absolute;
+    top: 0;
+    width: 60px;
+    animation: wiggle 1s infinite ease-in-out;
+  }
+
+  @keyframes wiggle {
+    0% { transform: rotate(-5deg); }
+    50% { transform: rotate(5deg); }
+    100% { transform: rotate(-5deg); }
+  }
+
+  #score, #highscore {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    font-size: 20px;
+    color: white;
+    z-index: 10;
+  }
+
+  #highscore { top: 40px; }
+
+  #counters {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    gap: 10px;
+    z-index: 10;
+  }
+
+  #specialCounter, #goldenCounter {
+    display: flex;
+    align-items: center;
+    font-size: 16px;
+    color: white;
+  }
+
+  #specialCounter img, #goldenCounter img {
+    width: 32px;
+    height: 32px;
+    margin-right: 5px;
+  }
+
+  #popup {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 140px;
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0;
+    z-index: 20;
+    pointer-events: none;
+    transition: transform 0.5s cubic-bezier(.68,-0.55,.27,1.55), opacity 0.5s ease-in-out;
+  }
+
+  #popup.show { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+
+  .confetti {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background-color: yellow;
+    z-index: 30;
+    pointer-events: none;
+    opacity: 0.9;
+  }
+</style>
+</head>
+<body>
+
+<div id="game">
+  <div id="score">Bows: 0</div>
+  <div id="highscore">High Score: 0</div>
+
+  <div id="counters">
+    <div id="specialCounter" style="display:none;"><img src="images/special.png"><span id="specialCount">0</span></div>
+    <div id="goldenCounter" style="display:none;"><img src="images/golden-special.png"><span id="goldenCount">0</span></div>
+  </div>
+
+  <img id="clouds" src="images/cloud.png" alt="Clouds">
+  <img id="kitty" src="images/hello-kitty.png" alt="Hello Kitty">
+  <img id="popup" src="images/special.png" alt="Special Pop-up!">
+</div>
+
+<script>
+const game = document.getElementById("game");
+const kitty = document.getElementById("kitty");
+const scoreEl = document.getElementById("score");
+const highscoreEl = document.getElementById("highscore");
+const popup = document.getElementById("popup");
+const specialCounter = document.getElementById("specialCounter");
+const goldenCounter = document.getElementById("goldenCounter");
+const specialCount = document.getElementById("specialCount");
+const goldenCount = document.getElementById("goldenCount");
+
+let score = 0;
+let highScore = localStorage.getItem("highScore") ? parseInt(localStorage.getItem("highScore")) : 0;
+let specials = 0;
+let goldenSpecials = 0;
+let kittyX = window.innerWidth / 2;
+let kittyPowerActive = false;
+
+highscoreEl.textContent = "High Score: " + highScore;
+
+function moveKitty(newX) {
+  const minX = -kitty.offsetWidth / 2;
+  const maxX = game.clientWidth - kitty.offsetWidth / 2;
+  kittyX = Math.max(minX, Math.min(maxX, newX));
+  kitty.style.left = kittyX + "px";
+}
+
+document.addEventListener("keydown", e => {
+  if (e.key === "ArrowLeft") moveKitty(kittyX - 30);
+  if (e.key === "ArrowRight") moveKitty(kittyX + 30);
+});
+
+game.addEventListener("touchstart", e => {
+  const touchX = e.touches[0].clientX;
+  if (touchX < window.innerWidth / 2) moveKitty(kittyX - 40);
+  else moveKitty(kittyX + 40);
+});
+
+function spawnItem(type) {
+  const item = document.createElement("img");
+  const imageMap = { "bow":"images/bow.png","bow-golden":"images/bow-golden.png","bomb":"images/bomb.png","powerup":"images/powerup.png" };
+  item.src = imageMap[type];
+  item.classList.add("item");
+  item.style.left = Math.random() * (window.innerWidth - 100) + "px";
+  game.appendChild(item);
+
+  let y = 0;
+  let speed = type === "bomb" ? 4 + Math.random()*6 : (type==="powerup"?10:5);
+  if(type==="bomb") item.style.width="72px";
+
+  const fall = setInterval(()=>{
+    y += speed;
+    item.style.top = y + "px";
+
+    if(checkCollision(item)){
+      handleCollision(item,type);
+      if(game.contains(item)) game.removeChild(item);
+      clearInterval(fall);
+      return;
+    }
+    if(y > window.innerHeight){
+      if(game.contains(item)) game.removeChild(item);
+      clearInterval(fall);
+    }
+  },30);
+}
+
+function checkCollision(item){
+  const kittyRect = kitty.getBoundingClientRect();
+  const itemRect = item.getBoundingClientRect();
+  const kittyBounds = { left: kittyRect.left-10, right: kittyRect.right+10, top: kittyRect.top-10, bottom: kittyRect.bottom+10 };
+  return !(itemRect.right < kittyBounds.left || itemRect.left > kittyBounds.right || itemRect.bottom < kittyBounds.top || itemRect.top > kittyBounds.bottom);
+}
+
+function handleCollision(item,type){
+  if(type==="bomb"){ if(!kittyPowerActive) resetGame(); return; }
+  if(type==="bow"){
+    score++; scoreEl.textContent="Bows: "+score;
+    if(score>highScore){ highScore=score; highscoreEl.textContent="High Score: "+highScore; localStorage.setItem("highScore",highScore);}
+    if(score%10===0){ specials++; specialCounter.style.display="flex"; specialCount.textContent=specials; showPopup(); launchConfetti(30);}
+  } else if(type==="bow-golden"){ goldenSpecials++; goldenCounter.style.display="flex"; goldenCount.textContent=goldenSpecials;}
+  else if(type==="powerup" && !kittyPowerActive) activateKittyPower();
+}
+
+function activateKittyPower(){
+  kittyPowerActive=true;
+  kitty.src="images/golden-special.png";
+  kitty.style.bottom="100px";
+  kitty.style.transform="translateX(-50%) scale(2)";
+  setTimeout(()=>{ kitty.src="images/hello-kitty.png"; kitty.style.transform="translateX(-50%) scale(1)"; kitty.style.bottom=window.innerWidth<=768?"80px":"0px"; kittyPowerActive=false; },5000);
+}
+
+function launchConfetti(amount){
+  for(let i=0;i<amount;i++){
+    const confetti=document.createElement("div");
+    confetti.classList.add("confetti");
+    confetti.style.backgroundColor=`hsl(${Math.random()*360},80%,60%)`;
+    confetti.style.left=Math.random()*window.innerWidth+"px";
+    confetti.style.top="0px";
+    game.appendChild(confetti);
+    let y=0;
+    const fall=setInterval(()=>{
+      y+=Math.random()*7+3;
+      confetti.style.top=y+"px";
+      confetti.style.transform=`rotate(${y*5}deg)`;
+      if(y>window.innerHeight){ if(game.contains(confetti)) game.removeChild(confetti); clearInterval(fall);}
+    },30);
+  }
+}
+
+function showPopup(){ popup.classList.add("show"); setTimeout(()=>popup.classList.remove("show"),1000); }
+
+function resetGame(){
+  score=0; specials=0; goldenSpecials=0;
+  scoreEl.textContent="Bows: "+score;
+  specialCount.textContent=specials;
+  goldenCount.textContent=goldenSpecials;
+  specialCounter.style.display="none";
+  goldenCounter.style.display="none";
+  Array.from(game.querySelectorAll(".item,.confetti")).forEach(el=>{if(game.contains(el)) game.removeChild(el);});
+  kitty.src="images/hello-kitty.png";
+  kitty.style.transform="translateX(-50%) scale(1)";
+  kitty.style.bottom=window.innerWidth<=768?"80px":"0px";
+  kittyPowerActive=false;
+}
+
+setInterval(()=>spawnItem("bow"),1500);
+setInterval(()=>spawnItem("bow-golden"),4000);
+setInterval(()=>spawnItem("powerup"),30000);
+setInterval(()=>spawnItem("bomb"),9000);
+
+// LISTEN FOR BACK MESSAGE FROM PARENT MENU
+window.addEventListener("message", e=>{
+  if(e.data==="menu-back"){
+    resetGame();
+    // Optionally hide game or show a “menu overlay” here if needed
+  }
+});
+</script>
+</body>
+</html>

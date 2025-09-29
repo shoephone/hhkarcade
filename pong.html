@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pong – Hannah's Hello Kitty Arcade</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+:root {
+  --accent: #ff6fa3;
+  --bg: #000;
+  --button-bg: #111;
+  --button-color: #fff;
+  --button-radius: 8px;
+}
+
+body {
+  margin: 0;
+  font-family: 'Press Start 2P', cursive;
+  background: var(--bg);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  overflow: hidden;
+}
+
+body.playing {
+  align-items: flex-start;
+  padding-top: 12px;
+}
+
+canvas {
+  background: #000;
+  border: 3px solid var(--accent);
+  display: none;
+  border-radius: 12px;
+}
+
+#menu {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  gap: 16px;
+  width: 100%;
+  max-width: 400px;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+#menu img.logo {
+  max-width: 180px;
+  height: auto;
+  margin: 0;
+}
+
+button {
+  padding: 12px 24px;
+  font-size: clamp(0.7rem, 2.5vw, 1.1rem);
+  border-radius: var(--button-radius);
+  border: 2px solid var(--accent);
+  background: var(--button-bg);
+  color: var(--button-color);
+  cursor: pointer;
+  margin: 5px;
+  transition: transform 0.2s, background 0.2s, color 0.2s;
+}
+
+button:hover {
+  background: var(--accent);
+  color: #000;
+  transform: scale(1.05);
+}
+
+/* Character grids */
+.character-select {
+  width: 100%;
+}
+.character-select p { margin: 5px 0; text-align: center; }
+.character-select div {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  justify-items: center;
+}
+.character-select img {
+  width: 70px;
+  height: 80px;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border 0.2s;
+}
+.character-select img.selected { border: 2px solid var(--accent); }
+</style>
+</head>
+<body>
+<div id="menu">
+  <img src="../images/pong.png" class="logo" alt="Pong Logo">
+
+  <div class="character-select">
+    <p>Player 1:</p>
+    <div id="bottomChoices"></div>
+  </div>
+  <div class="character-select">
+    <p>Player 2:</p>
+    <div id="topChoices"></div>
+  </div>
+
+  <div>
+    <label><input type="radio" name="mode" value="1" checked> 1 Player</label>
+    <label><input type="radio" name="mode" value="2"> 2 Players</label>
+  </div>
+
+  <button id="startBtn">Play</button>
+</div>
+
+<canvas id="gameCanvas" width="400" height="700"></canvas>
+
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+const menu = document.getElementById("menu");
+const startBtn = document.getElementById("startBtn");
+
+const bottomChoices = document.getElementById("bottomChoices");
+const topChoices = document.getElementById("topChoices");
+
+// Add characters
+const characters = ["images/hello-kitty.png","images/labubu.png","images/kuromi.png","images/coraline.png"];
+let bottomImg = null, topImg = null;
+let bottomIndex = null, topIndex = null;
+
+let mode = 1;
+let keys = {};
+let gameWidth = 400, gameHeight = 700;
+const paddleWidth = 80, paddleHeight = 15;
+const ballSize = 15;
+let player1, player2, ball;
+let score1, score2;
+let bounceBottom = 0, bounceTop = 0;
+
+// Create character grids
+function createCharacterChoices(container, setImg, setIndex){
+  container.innerHTML = "";
+  characters.forEach((src, idx)=>{
+    const img = new Image();
+    img.src = src;
+    img.addEventListener("click", ()=>{
+      container.querySelectorAll("img").forEach(i=>i.classList.remove("selected"));
+      img.classList.add("selected");
+      setImg(img);
+      setIndex(idx);
+    });
+    container.appendChild(img);
+  });
+}
+createCharacterChoices(bottomChoices, img=>bottomImg=img, idx=>bottomIndex=idx);
+createCharacterChoices(topChoices, img=>topImg=img, idx=>topIndex=idx);
+
+// Game setup
+function resetGame(){
+  player1 = {x: gameWidth/2 - paddleWidth/2, y: gameHeight - paddleHeight - 10};
+  player2 = {x: gameWidth/2 - paddleWidth/2, y: 10};
+  ball = {x: gameWidth/2 - ballSize/2, y: gameHeight/2 - ballSize/2, dx: 4, dy: 4};
+  score1 = 0; score2 = 0;
+  bounceBottom = 0; bounceTop = 0;
+}
+
+function resizeCanvas(){
+  const designW = 400, designH = 700;
+  const maxH = Math.max(200, window.innerHeight-40);
+  const targetH = Math.min(designH, maxH);
+  const aspect = designW/designH;
+  const targetW = Math.round(targetH*aspect);
+  canvas.style.width = targetW+'px';
+  canvas.style.height = targetH+'px';
+  gameWidth = targetW;
+  gameHeight = targetH;
+}
+
+canvas.addEventListener('touchstart', e=>{
+  for(let touch of e.touches){
+    const x = touch.clientX;
+    const y = touch.clientY;
+    if(y > gameHeight/2){ if(x < gameWidth/2) keys['ArrowLeft']=true; else keys['ArrowRight']=true; }
+    else { if(x < gameWidth/2) keys['a']=true; else keys['d']=true; }
+  }
+},{passive:false});
+canvas.addEventListener('touchend', e=>{ keys['ArrowLeft']=false; keys['ArrowRight']=false; keys['a']=false; keys['d']=false; });
+
+function draw(){
+  ctx.clearRect(0,0,gameWidth,gameHeight);
+  ctx.fillStyle = '#ff6fa3';
+  ctx.fillRect(player1.x, player1.y, paddleWidth, paddleHeight);
+  ctx.fillRect(player2.x, player2.y, paddleWidth, paddleHeight);
+
+  if(bottomImg){
+    const h = paddleHeight*4;
+    const w = h * (bottomImg.naturalWidth/bottomImg.naturalHeight);
+    ctx.drawImage(bottomImg, player1.x + paddleWidth/2 - w/2, player1.y - h - bounceBottom, w, h);
+  }
+  if(topImg){
+    const h = paddleHeight*4;
+    const w = h * (topImg.naturalWidth/topImg.naturalHeight);
+    ctx.drawImage(topImg, player2.x + paddleWidth/2 - w/2, player2.y + paddleHeight + bounceTop, w, h);
+  }
+
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(ball.x, ball.y, ballSize, ballSize);
+  ctx.fillStyle = '#ff6fa3';
+  ctx.font = "20px 'Press Start 2P'";
+  ctx.fillText("P2: "+score2, 10, 25);
+  ctx.fillText("P1: "+score1, 10, gameHeight-10);
+}
+
+function update(){
+  if(keys["ArrowLeft"]) player1.x -= 6;
+  if(keys["ArrowRight"]) player1.x += 6;
+  player1.x = Math.max(0, Math.min(gameWidth - paddleWidth, player1.x));
+
+  if(mode===1){
+    const target = ball.x + ballSize/2;
+    const center = player2.x + paddleWidth/2;
+    if(target < center) player2.x -= 4;
+    else if(target > center) player2.x += 4;
+  } else {
+    if(keys["a"]||keys["A"]) player2.x -= 6;
+    if(keys["d"]||keys["D"]) player2.x += 6;
+  }
+  player2.x = Math.max(0, Math.min(gameWidth - paddleWidth, player2.x));
+
+  ball.x += ball.dx;
+  ball.y += ball.dy;
+  if(ball.x <= 0 || ball.x + ballSize >= gameWidth) ball.dx *= -1;
+
+  if(ball.y + ballSize >= player1.y && ball.x + ballSize >= player1.x && ball.x <= player1.x + paddleWidth){
+    ball.dy *= -1;
+    ball.y = player1.y - ballSize;
+    bounceBottom = 12;
+  }
+  if(ball.y <= player2.y + paddleHeight && ball.x + ballSize >= player2.x && ball.x <= player2.x + paddleWidth){
+    ball.dy *= -1;
+    ball.y = player2.y + paddleHeight;
+    bounceTop = 12;
+  }
+
+  bounceBottom *= 0.6;
+  bounceTop *= 0.6;
+
+  if(ball.y < 0){ score1++; resetBall(1); }
+  if(ball.y > gameHeight){ score2++; resetBall(-1); }
+}
+
+function resetBall(direction){
+  ball.x = gameWidth/2 - ballSize/2;
+  ball.y = gameHeight/2 - ballSize/2;
+  ball.dx = 4 * (Math.random()>0.5?1:-1);
+  ball.dy = 4 * direction;
+}
+
+function gameLoop(){
+  update();
+  draw();
+  requestAnimationFrame(gameLoop);
+}
+
+document.addEventListener("keydown", e=>keys[e.key]=true);
+document.addEventListener("keyup", e=>keys[e.key]=false);
+
+startBtn.addEventListener("click", ()=>{
+  mode = parseInt(document.querySelector("input[name='mode']:checked").value);
+  if(!bottomImg || !topImg){ alert("Select characters for both players!"); return; }
+  document.body.classList.add('playing');
+  menu.style.display="none";
+  canvas.style.display="block";
+  resizeCanvas();
+  resetGame();
+  gameLoop();
+});
+</script>
+</body>
+</html>
