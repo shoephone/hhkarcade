@@ -1,401 +1,306 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Vertical Pong</title>
-  <style>
-    body {
-      margin: 0;
-      background: #f0f0f0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      overflow: hidden;
-      font-family: sans-serif;
-    }
-    /* when gameplay starts, pin content to the top so the full canvas is visible */
-    body.playing {
-      align-items: flex-start;
-      padding-top: 12px; /* small spacing from top */
-    }
-    canvas {
-      background: #fff;
-      border: 2px solid #333;
-      display: none;
-    }
-    #menu {
-      text-align: center;
-    }
-    .character-select {
-      margin: 10px 0;
-    }
-    .character-select img {
-      width: 100px;
-      height: 100px;
-      margin: 5px;
-      border: 3px solid transparent;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: border 0.2s;
-    }
-    .character-select img.selected {
-      border: 3px solid #333;
-    }
-    button {
-      padding: 10px 20px;
-      font-size: 18px;
-      border-radius: 8px;
-      border: none;
-      background: #333;
-      color: #fff;
-      cursor: pointer;
-      margin: 5px;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pong – Hannah's Hello Kitty Arcade</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --accent: #ff6fa3;
+  --bg: #000;
+  --button-bg: #111;
+  --button-hover: #ff6fa3;
+  --button-color: #fff;
+  --button-radius: 8px;
+}
+
+body {
+  margin: 0;
+  font-family: 'Press Start 2P', cursive;
+  background: var(--bg);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  overflow: hidden;
+}
+
+body.playing {
+  align-items: flex-start;
+  padding-top: 12px;
+}
+
+canvas {
+  background: #000;
+  border: 3px solid var(--accent);
+  display: none;
+  border-radius: 12px;
+}
+
+#menu {
+  text-align: center;
+  color: var(--accent);
+}
+
+#menu img.logo {
+  max-width: 220px;
+  height: auto;
+  margin: 20px 0;
+  border: 3px solid var(--accent);
+  border-radius: 12px;
+}
+
+button {
+  padding: 14px 28px;
+  font-size: clamp(0.7rem, 2.5vw, 1.2rem);
+  border-radius: var(--button-radius);
+  border: 2px solid var(--accent);
+  background: var(--button-bg);
+  color: var(--button-color);
+  cursor: pointer;
+  margin: 5px;
+  transition: transform 0.2s, background 0.2s, color 0.2s;
+}
+
+button:hover {
+  background: var(--button-hover);
+  color: #000;
+  transform: scale(1.05);
+}
+
+/* BACK BUTTON */
+#backBtn {
+  position: fixed;
+  top: 90px;
+  left: 10px;
+  z-index: 1000;
+  padding: 10px 22px;
+  font-family: 'Press Start 2P', cursive;
+  font-size: clamp(12px, 2.5vw, 18px);
+  border: 2px solid var(--accent);
+  border-radius: var(--button-radius);
+  background: var(--button-bg);
+  color: var(--button-color);
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  display: none;
+}
+
+#backBtn span { display: inline; }
+
+@media (max-width: 768px) {
+  #backBtn { top: 80px; padding: 8px 14px; font-size: clamp(16px, 4vw, 20px); }
+  #backBtn span { display: none; }
+  #backBtn::after { content: "←"; display: inline-block; }
+}
+
+.character-select img {
+  width: 110px;
+  height: 120px;
+  margin: 5px;
+  border: 3px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border 0.2s;
+}
+
+.character-select img.selected {
+  border: 3px solid var(--accent);
+}
+</style>
 </head>
 <body>
-    <div id="menu">
-    
-    <div style="text-align: center; margin: 20px 0;">
-      <img src="../images/pong.png" alt="Bows & Bombs" style="width: 200px; height: auto; max-width: 100%;">
-    </div>
-    
-    <div class="character-select">
-      <p>Player 1:</p>
-      <div id="bottomChoices"></div>
-    </div>
-    <div class="character-select">
-      <p>Player 2:</p>
-      <div id="topChoices"></div>
-    </div>
+<div id="menu">
+  <img src="../images/pong.png" class="logo" alt="Pong Logo">
 
-    <div>
-      <label>
-        <input type="radio" name="mode" value="1" checked> 1 Player (vs AI)
-      </label>
-      <label>
-        <input type="radio" name="mode" value="2"> 2 Players
-      </label>
-    </div>
-
-    <button id="startBtn">Play</button>
+  <div class="character-select">
+    <p>Player 1:</p>
+    <div id="bottomChoices"></div>
+  </div>
+  <div class="character-select">
+    <p>Player 2:</p>
+    <div id="topChoices"></div>
   </div>
 
-  <canvas id="gameCanvas" width="400" height="700"></canvas>
+  <div>
+    <label><input type="radio" name="mode" value="1" checked> 1 Player (vs AI)</label>
+    <label><input type="radio" name="mode" value="2"> 2 Players</label>
+  </div>
 
-  <script>
-    const canvas = document.getElementById("gameCanvas");
-    const ctx = canvas.getContext("2d");
+  <button id="startBtn">Play</button>
+</div>
 
-    const menu = document.getElementById("menu");
-    const startBtn = document.getElementById("startBtn");
-    const bottomChoices = document.getElementById("bottomChoices");
-    const topChoices = document.getElementById("topChoices");
+<button id="backBtn"><span>Back</span></button>
 
-    // Example characters (replace with your own images/paths)
-    const characters = [
-      "images/player1.png",
-      "images/player2.png",
-      "images/player3.png"
-    ];
-    // Friendly display names matching the characters array
-    const characterNames = ["Hello Kitty", "Labubu", "Kuromi"];
+<canvas id="gameCanvas" width="400" height="700"></canvas>
 
-  let bottomImg = null;
-  let topImg = null;
-  // store which index was selected so we can show names
-  let bottomIndex = null;
-  let topIndex = null;
-    let mode = 1; // default = 1 player
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+const menu = document.getElementById("menu");
+const startBtn = document.getElementById("startBtn");
+const backBtn = document.getElementById("backBtn");
 
-    function createCharacterChoices(container, callback, setIndex) {
-      characters.forEach((src, idx) => {
-        const img = new Image();
-        img.src = src;
-        img.addEventListener("click", () => {
-          // Clear selection
-          container.querySelectorAll("img").forEach(i => i.classList.remove("selected"));
-          img.classList.add("selected");
-          setIndex(idx);
-          callback(img);
-          // update name display if present
-          const nameEl = container.parentElement.querySelector('.selected-name');
-          if (nameEl) nameEl.textContent = characterNames[idx];
-        });
-        container.appendChild(img);
-      });
-    }
+const bottomChoices = document.getElementById("bottomChoices");
+const topChoices = document.getElementById("topChoices");
+const characters = ["images/player1.png","images/player2.png","images/player3.png"];
+let bottomImg = null, topImg = null;
+let bottomIndex = null, topIndex = null;
 
-  // inject small name labels under each choice group
-  const bottomLabel = document.createElement('div');
-  bottomLabel.className = 'selected-name';
-  bottomChoices.parentElement.appendChild(bottomLabel);
-  const topLabel = document.createElement('div');
-  topLabel.className = 'selected-name';
-  topChoices.parentElement.appendChild(topLabel);
+let mode = 1;
+let keys = {};
+let gameWidth = 400, gameHeight = 700;
+const paddleWidth = 80, paddleHeight = 15;
+const ballSize = 15;
+let player1, player2, ball;
+let score1, score2;
+let bounceBottom = 0, bounceTop = 0;
 
-  createCharacterChoices(bottomChoices, img => bottomImg = img, idx => bottomIndex = idx);
-  createCharacterChoices(topChoices, img => topImg = img, idx => topIndex = idx);
+function createCharacterChoices(container, setImg, setIndex){
+  characters.forEach((src, idx)=>{
+    const img = new Image();
+    img.src = src;
+    img.addEventListener("click", ()=>{
+      container.querySelectorAll("img").forEach(i=>i.classList.remove("selected"));
+      img.classList.add("selected");
+      setImg(img);
+      setIndex(idx);
+    });
+    container.appendChild(img);
+  });
+}
+createCharacterChoices(bottomChoices, img=>bottomImg=img, idx=>bottomIndex=idx);
+createCharacterChoices(topChoices, img=>topImg=img, idx=>topIndex=idx);
 
-  // Make canvas responsive so the bottom player stays visible on small viewports
-  // gameWidth/gameHeight are the CSS pixel sizes used for game logic
-  let gameWidth = 400, gameHeight = 700;
-  function resizeCanvas() {
-      // original design size
-      const designW = 400, designH = 700;
-      // leave a small margin so controls/menu remain visible
-      const maxAvailableH = Math.max(200, window.innerHeight - 40);
-      const targetH = Math.min(designH, maxAvailableH);
-      const aspect = designW / designH;
-      const targetW = Math.round(targetH * aspect);
+function resetGame(){
+  player1 = {x: gameWidth/2 - paddleWidth/2, y: gameHeight - paddleHeight - 10};
+  player2 = {x: gameWidth/2 - paddleWidth/2, y: 10};
+  ball = {x: gameWidth/2 - ballSize/2, y: gameHeight/2 - ballSize/2, dx: 4, dy: 4};
+  score1 = 0;
+  score2 = 0;
+  bounceBottom = 0;
+  bounceTop = 0;
+}
 
-  // set the CSS size
-  canvas.style.width = targetW + 'px';
-  canvas.style.height = targetH + 'px';
-
-  // expose CSS pixel size for game logic
+function resizeCanvas(){
+  const designW = 400, designH = 700;
+  const maxH = Math.max(200, window.innerHeight-40);
+  const targetH = Math.min(designH, maxH);
+  const aspect = designW/designH;
+  const targetW = Math.round(targetH*aspect);
+  canvas.style.width = targetW+'px';
+  canvas.style.height = targetH+'px';
   gameWidth = targetW;
   gameHeight = targetH;
+}
 
-      // handle devicePixelRatio so canvas is crisp on high-DPI displays
-      const dpr = window.devicePixelRatio || 1;
-  canvas.width = Math.round(targetW * dpr);
-  canvas.height = Math.round(targetH * dpr);
-      // scale the drawing context so 1 unit = 1 CSS pixel
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    }
+canvas.addEventListener('touchstart', e => { e.preventDefault(); }, {passive:false});
+canvas.addEventListener('touchmove', e => { e.preventDefault(); }, {passive:false});
 
-    // Update canvas size on window resize so the bottom paddle remains on-screen
-    window.addEventListener('resize', () => {
-      const wasRunning = canvas.style.display === 'block';
-      resizeCanvas();
-      // if game visible, reposition paddles to use new dimensions
-      if (wasRunning) resetGame();
-    });
+function draw(){
+  ctx.clearRect(0,0,gameWidth,gameHeight);
+  ctx.fillStyle = '#ff6fa3';
+  ctx.fillRect(player1.x, player1.y, paddleWidth, paddleHeight);
+  ctx.fillRect(player2.x, player2.y, paddleWidth, paddleHeight);
 
-    // initialize to a reasonable size
-    resizeCanvas();
+  if(bottomImg){
+    const h = paddleHeight*4;
+    const w = h * (bottomImg.naturalWidth/bottomImg.naturalHeight);
+    ctx.drawImage(bottomImg, player1.x + paddleWidth/2 - w/2, player1.y - h - bounceBottom, w, h);
+  }
+  if(topImg){
+    const h = paddleHeight*4;
+    const w = h * (topImg.naturalWidth/topImg.naturalHeight);
+    ctx.drawImage(topImg, player2.x + paddleWidth/2 - w/2, player2.y + paddleHeight + bounceTop, w, h);
+  }
 
-  // Game objects
-  const paddleWidth = 80, paddleHeight = 15;
-  // visualScale controls how much larger character images are drawn compared to the collision paddle.
-  // Keep collisions unchanged; increase this number to make images bigger (2.5 - 3 is a good range).
-  const visualScale = 3;
-  // hitMargin expands the horizontal collision tolerance so paddles don't need perfect alignment
-  // Increase slightly for easier hits; try values like 8-20. Lower values = less forgiving.
-  const hitMargin = .000001;
-  // AI tuning knobs
-  // reactionDelay: number of frames the AI waits between reacting (higher = more sluggish)
-  const aiReactionDelay = 0; // 0 = react every frame; try 4-8 for noticeable delay
-  // randomAimOffset: maximum random horizontal offset (pixels) added to AI target to simulate mistakes
-  const randomAimOffset = 18; // try 0 (perfect) up to ~30 for sloppier AI
-  let aiFrameCounter = 0;
-    const ballSize = 20;
-    let playerPaddle, aiPaddle, ball, playerScore, aiScore;
-    let keys = {};
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(ball.x, ball.y, ballSize, ballSize);
 
-    function resetGame() {
-      playerPaddle = { x: gameWidth/2 - paddleWidth/2, y: gameHeight - 30 };
-      aiPaddle = { x: gameWidth/2 - paddleWidth/2, y: 15 };
-      ball = { x: gameWidth/2, y: gameHeight/2, dx: 3, dy: 3 };
-      playerScore = 0;
-      aiScore = 0;
-    }
+  ctx.fillStyle = '#ff6fa3';
+  ctx.font = "20px 'Press Start 2P'";
+  ctx.fillText("P2: "+score2, 10, 25);
+  ctx.fillText("P1: "+score1, 10, gameHeight-10);
+}
 
-    function drawPaddle(paddle, img, rotate180 = false) {
-      if (img) {
-        // Preserve image aspect ratio but draw the image larger than the collision box.
-        const aspect = img.naturalWidth && img.naturalHeight ? img.naturalWidth / img.naturalHeight : 1;
-        // Desired visual height (bigger than paddleHeight)
-        let drawH = paddleHeight * visualScale;
-        let drawW = drawH * aspect;
+function update(){
+  if(keys["ArrowLeft"]) player1.x -= 6;
+  if(keys["ArrowRight"]) player1.x += 6;
+  player1.x = Math.max(0, Math.min(gameWidth - paddleWidth, player1.x));
 
-        // Cap visual width so images never become absurdly large on wide canvases
-  const maxVisualW = Math.min(gameWidth * 0.5, paddleWidth * 4);
-        if (drawW > maxVisualW) {
-          drawW = maxVisualW;
-          drawH = drawW / aspect;
-        }
+  if(mode===1){
+    const target = ball.x + ballSize/2;
+    const center = player2.x + paddleWidth/2;
+    if(target < center) player2.x -= 4;
+    else if(target > center) player2.x += 4;
+  } else {
+    if(keys["a"]||keys["A"]) player2.x -= 6;
+    if(keys["d"]||keys["D"]) player2.x += 6;
+  }
+  player2.x = Math.max(0, Math.min(gameWidth - paddleWidth, player2.x));
 
-        // Center the visual image on the paddle's center while keeping collision size unchanged.
-        const drawX = paddle.x + (paddleWidth - drawW) / 2;
-        const drawY = paddle.y + (paddleHeight - drawH) / 2;
-        if (rotate180) {
-          // draw rotated about the center of the visual image
-          const cx = drawX + drawW/2;
-          const cy = drawY + drawH/2;
-          ctx.save();
-          ctx.translate(cx, cy);
-          ctx.rotate(Math.PI);
-          ctx.drawImage(img, -drawW/2, -drawH/2, drawW, drawH);
-          ctx.restore();
-        } else {
-          ctx.drawImage(img, drawX, drawY, drawW, drawH);
-        }
-      } else {
-        ctx.fillStyle = "#333";
-        ctx.fillRect(paddle.x, paddle.y, paddleWidth, paddleHeight);
-      }
-    }
+  ball.x += ball.dx;
+  ball.y += ball.dy;
+  if(ball.x <= 0 || ball.x + ballSize >= gameWidth) ball.dx *= -1;
 
-    function drawBall() {
-      ctx.beginPath();
-      ctx.arc(ball.x + ballSize/2, ball.y + ballSize/2, ballSize/2, 0, Math.PI*2);
-      ctx.fillStyle = "#e74c3c";
-      ctx.fill();
-      ctx.closePath();
-    }
+  if(ball.y + ballSize >= player1.y && ball.x + ballSize >= player1.x && ball.x <= player1.x + paddleWidth){
+    ball.dy *= -1;
+    ball.y = player1.y - ballSize;
+    bounceBottom = 12;
+  }
+  if(ball.y <= player2.y + paddleHeight && ball.x + ballSize >= player2.x && ball.x <= player2.x + paddleWidth){
+    ball.dy *= -1;
+    ball.y = player2.y + paddleHeight;
+    bounceTop = 12;
+  }
 
-    function drawScores() {
-      ctx.fillStyle = "#000";
-      ctx.font = "20px Arial";
-      const bottomName = (bottomIndex !== null && characterNames[bottomIndex]) ? characterNames[bottomIndex] : 'Bottom';
-      const topName = (topIndex !== null && characterNames[topIndex]) ? characterNames[topIndex] : 'Top';
-      ctx.fillText(bottomName + ": " + playerScore, 10, gameHeight - 10);
-      ctx.fillText(topName + ": " + aiScore, 10, 25);
-    }
+  bounceBottom *= 0.6;
+  bounceTop *= 0.6;
 
-    function update() {
-      // --- Bottom Paddle Controls ---
-      if (keys["ArrowLeft"]) playerPaddle.x -= 5;
-      if (keys["ArrowRight"]) playerPaddle.x += 5;
-  playerPaddle.x = Math.max(0, Math.min(gameWidth - paddleWidth, playerPaddle.x));
+  if(ball.y < 0){ score1++; resetBall(1); }
+  if(ball.y > gameHeight){ score2++; resetBall(-1); }
+}
 
-      // Mobile bottom paddle: tap-to-move handler (attached once)
+function resetBall(direction){
+  ball.x = gameWidth/2 - ballSize/2;
+  ball.y = gameHeight/2 - ballSize/2;
+  ball.dx = 4 * (Math.random()>0.5?1:-1);
+  ball.dy = 4 * direction;
+}
 
-    // --- Top Paddle Controls ---
-      if (mode === 1) {
-        // AI follows ball with optional reaction delay and small random aiming error
-        aiFrameCounter++;
-        if (aiFrameCounter > aiReactionDelay) {
-          aiFrameCounter = 0;
-          // compute a noisy target x (center of the ball plus a random offset)
-          const noisyTarget = (ball.x + ballSize/2) + (Math.random() * 2 - 1) * randomAimOffset;
-          const aiCenter = aiPaddle.x + paddleWidth/2;
-          const step = 3; // AI movement per update (tweakable)
-          if (noisyTarget < aiCenter) aiPaddle.x -= step;
-          if (noisyTarget > aiCenter) aiPaddle.x += step;
-        }
-      } else {
-        // Player 2: A/D keys
-        if (keys["a"] || keys["A"]) aiPaddle.x -= 5;
-        if (keys["d"] || keys["D"]) aiPaddle.x += 5;
-      }
-  aiPaddle.x = Math.max(0, Math.min(gameWidth - paddleWidth, aiPaddle.x));
+function gameLoop(){
+  update();
+  draw();
+  requestAnimationFrame(gameLoop);
+}
 
-      // Ball movement
-      ball.x += ball.dx;
-      ball.y += ball.dy;
+document.addEventListener("keydown", e=>keys[e.key]=true);
+document.addEventListener("keyup", e=>keys[e.key]=false);
 
-  if (ball.x <= 0 || ball.x + ballSize >= gameWidth) ball.dx *= -1;
-
-      // Paddle collisions
-      // use ball center and a small horizontal margin for more forgiving collisions
-      const ballCenterX = ball.x + ballSize/2;
-      if (ball.y + ballSize >= playerPaddle.y &&
-          ballCenterX > (playerPaddle.x - hitMargin) &&
-          ballCenterX < (playerPaddle.x + paddleWidth + hitMargin)) {
-        ball.dy *= -1;
-        ball.y = playerPaddle.y - ballSize;
-      }
-      const ballCenterX2 = ball.x + ballSize/2;
-      if (ball.y <= aiPaddle.y + paddleHeight &&
-          ballCenterX2 > (aiPaddle.x - hitMargin) &&
-          ballCenterX2 < (aiPaddle.x + paddleWidth + hitMargin)) {
-        ball.dy *= -1;
-        ball.y = aiPaddle.y + paddleHeight;
-      }
-
-      // Scoring
-      if (ball.y < 0) {
-        playerScore++;
-        ball = { x: gameWidth/2, y: gameHeight/2, dx: 3, dy: 3 };
-      } else if (ball.y > gameHeight) {
-        aiScore++;
-        ball = { x: gameWidth/2, y: gameHeight/2, dx: -3, dy: -3 };
-      }
-    }
-
-    function draw() {
-      ctx.clearRect(0, 0, gameWidth, gameHeight);
-  drawPaddle(playerPaddle, bottomImg, false);
-  // in 2-player mode draw the top player rotated 180deg for a natural look
-  drawPaddle(aiPaddle, topImg, mode === 2);
-      drawBall();
-      drawScores();
-    }
-
-    // main game loop
-    function gameLoop() {
-      update();
-      draw();
-      requestAnimationFrame(gameLoop);
-    }
-
-    // attach input listeners once (not inside the game loop)
-    document.addEventListener("keydown", e => keys[e.key] = true);
-    document.addEventListener("keyup", e => keys[e.key] = false);
-
-    // attach a tap-to-move handler that uses CSS pixel sizes
-    // - bottom half taps move the bottom paddle (player 1)
-    // - top half taps move the top paddle only in 2-player mode
-    canvas.addEventListener('touchstart', function(e){
-      if(!e.touches || e.touches.length === 0) return;
-      // guard: if paddles haven't been initialized yet, ignore taps
-      if(!playerPaddle || !aiPaddle) return;
-      const rect = canvas.getBoundingClientRect();
-      const touch = e.touches[0];
-      const touchX = touch.clientX - rect.left; // CSS px
-      const touchY = touch.clientY - rect.top;  // CSS px
-      const cssWidth = rect.width; // CSS pixels
-      const cssHeight = rect.height; // CSS pixels
-
-      // Which half was tapped? (0..cssHeight)
-      const tappedTopHalf = (touchY < cssHeight/2);
-
-      // Helper to move a paddle left/right by a fixed amount and clamp within CSS width.
-      function movePaddleCss(paddle, delta) {
-        paddle.x += delta;
-        // clamp using CSS width so visual alignment matches touch coords
-        paddle.x = Math.max(0, Math.min(cssWidth - paddleWidth, paddle.x));
-      }
-
-      // If the top half was tapped and we're in 2-player mode, move the top paddle
-      if (tappedTopHalf && mode === 2) {
-        if (touchX < cssWidth/2) movePaddleCss(aiPaddle, -40);
-        else movePaddleCss(aiPaddle, 40);
-      }
-
-      // If the bottom half was tapped, always move the bottom (player 1) paddle
-      if (!tappedTopHalf) {
-        if (touchX < cssWidth/2) movePaddleCss(playerPaddle, -40);
-        else movePaddleCss(playerPaddle, 40);
-      }
-
-      e.preventDefault();
-    }, { passive: false });
-
-    startBtn.addEventListener("click", () => {
-      const modeChoice = document.querySelector("input[name='mode']:checked").value;
-      mode = parseInt(modeChoice);
-      if (!bottomImg || !topImg) {
-        alert("Select characters for both players!");
-        return;
-      }
-      // pin content to the top so the bottom paddle is fully visible
-      document.body.classList.add('playing');
-  menu.style.display = "none";
-  canvas.style.display = "block";
-  // recompute sizes now that layout changed (body.playing / menu hidden)
+startBtn.addEventListener("click", ()=>{
+  mode = parseInt(document.querySelector("input[name='mode']:checked").value);
+  if(!bottomImg || !topImg){ alert("Select characters for both players!"); return; }
+  document.body.classList.add('playing');
+  menu.style.display="none";
+  canvas.style.display="block";
+  backBtn.style.display = "inline-block";
   resizeCanvas();
-  console.info('Play pressed — gameWidth=', gameWidth, 'gameHeight=', gameHeight);
   resetGame();
   gameLoop();
-    });
-  </script>
+});
+
+// Back to character select
+backBtn.addEventListener("click", ()=>{
+  menu.style.display="block";
+  canvas.style.display="none";
+  backBtn.style.display="none";
+});
+
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+</script>
 </body>
 </html>
-
-
