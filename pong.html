@@ -21,9 +21,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: flex-start; /* top-align the menu */
-  height: 100vh;
   overflow: hidden;
-  padding-top: 10px; /* small spacing from top */
 }
 
 body.playing {
@@ -169,6 +167,29 @@ function resetGame(){
   ball = {x: gameWidth/2 - ballSize/2, y: gameHeight/2 - ballSize/2, dx: 4, dy: 4};
   score1 = 0; score2 = 0;
   bounceBottom = 0; bounceTop = 0;
+}
+function setViewportHeight() {
+  const vh = window.innerHeight * 0.01;
+  document.documentElement.style.setProperty('--vh', `${vh}px`);
+  document.body.style.minHeight = `${window.innerHeight}px`; // ensures body fills screen
+}
+
+// call once
+setViewportHeight();
+// call on resize
+window.addEventListener('resize', setViewportHeight);
+
+// Adjust menu and canvas to fit
+function resizeCanvas(){
+  const designW = 400, designH = 700;
+  const maxH = window.innerHeight - 20; // leave small padding at top/bottom
+  const aspect = designW/designH;
+  const targetH = Math.min(designH, maxH);
+  const targetW = Math.round(targetH * aspect);
+  canvas.style.width = targetW+'px';
+  canvas.style.height = targetH+'px';
+  gameWidth = targetW;
+  gameHeight = targetH;
 }
 
 function resizeCanvas(){
