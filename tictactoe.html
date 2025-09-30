@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tic Tac Toe</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+:root {
+  --accent: #ff6fa3;
+  --bg: #000;
+  --button-bg: #111;
+  --button-color: #fff;
+  --button-radius: 12px;
+  --win-color: #ffcc00;
+}
+
+body {
+  margin: 0;
+  font-family: 'Press Start 2P', cursive;
+  background: var(--bg);
+  color: var(--accent);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  overflow: hidden;
+  flex-direction: column;
+}
+
+h1 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  text-align: center;
+  font-size: 2.2rem;
+  color: white;
+}
+
+#menu {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 400px;
+  box-sizing: border-box;
+}
+
+.character-select {
+  width: 100%;
+  text-align: center;
+}
+
+.character-select p {
+  margin-bottom: 10px;
+}
+
+.character-select div {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  justify-items: center;
+  align-items: center;
+}
+
+.character-select img {
+  width: 60px;
+  height: 60px;
+  border: 3px solid transparent;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: border 0.2s, transform 0.2s, box-shadow 0.3s;
+}
+
+.character-select img.selected {
+  border: 3px solid var(--accent);
+  transform: scale(1.15);
+  box-shadow: 0 0 12px var(--accent);
+}
+
+button {
+  font-family: 'Press Start 2P', cursive;
+  padding: 14px 28px;
+  font-size: 1rem;
+  border-radius: var(--button-radius);
+  border: 2px solid var(--accent);
+  background: var(--button-bg);
+  color: var(--button-color);
+  cursor: pointer;
+  margin-top: 20px;
+  transition: transform 0.2s, background 0.2s, color 0.2s;
+}
+
+button:hover {
+  background: var(--accent);
+  color: #000;
+  transform: scale(1.05);
+}
+
+.tictactoe-container {
+  display: grid;
+  grid-template-columns: repeat(3, 120px);
+  gap: 10px;
+  margin-top: 20px;
+  display: none;
+}
+
+.box {
+  width: 120px;
+  height: 120px;
+  background: var(--bg);
+  border: 3px solid var(--accent);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 48px;
+  cursor: pointer;
+}
+
+.box.win {
+  background: var(--win-color);
+}
+
+.status {
+  margin-top: 15px;
+  text-align: center;
+  font-size: 14px;
+}
+
+#gameTitle {
+  display: none;
+}
+</style>
+</head>
+<body>
+
+<!-- Character select menu -->
+<div id="menu">
+  <h1>Tic Tac Toe</h1>
+
+  <div class="character-select">
+    <p>Player 1:</p>
+    <div id="playerXChoices"></div>
+  </div>
+
+  <div class="character-select">
+    <p>Player 2:</p>
+    <div id="playerOChoices"></div>
+  </div>
+
+  <button id="startBtn">Start Game</button>
+</div>
+
+<!-- Game header (shown above gameboard when playing) -->
+<h1 id="gameTitle">Tic Tac Toe</h1>
+
+<!-- Status text -->
+<div class="status">Select characters to start!</div>
+
+<!-- Game container -->
+<div class="tictactoe-container" id="gameBoard">
+  <div data-index="0" class="box"></div>
+  <div data-index="1" class="box"></div>
+  <div data-index="2" class="box"></div>
+  <div data-index="3" class="box"></div>
+  <div data-index="4" class="box"></div>
+  <div data-index="5" class="box"></div>
+  <div data-index="6" class="box"></div>
+  <div data-index="7" class="box"></div>
+  <div data-index="8" class="box"></div>
+</div>
+
+<button id="restartBtn" style="display:none;">Restart 🔁</button>
+<button id="backBtn" style="display:none;">Back</button>
+
+<script>
+const characters = [
+  {name:"Hello Kitty", src:"images/hello-kitty.png"},
+  {name:"Labubu", src:"images/labubu.png"},
+  {name:"Kuromi", src:"images/kuromi.png"},
+  {name:"Coraline", src:"images/coraline.png"}
+];
+
+const playerXChoices = document.getElementById("playerXChoices");
+const playerOChoices = document.getElementById("playerOChoices");
+let playerXImg=null, playerOImg=null;
+let playerXName="", playerOName="";
+
+function createCharacterChoices(container, setImg, setName){
+  container.innerHTML = "";
+  characters.forEach(ch=>{
+    const img = new Image();
+    img.src = ch.src;
+    img.addEventListener("click", ()=>{
+      container.querySelectorAll("img").forEach(i=>i.classList.remove('selected'));
+      img.classList.add('selected');
+      setImg(img);
+      setName(ch.name);
+    });
+    container.appendChild(img);
+  });
+}
+
+createCharacterChoices(playerXChoices, img=>playerXImg=img, name=>playerXName=name);
+createCharacterChoices(playerOChoices, img=>playerOImg=img, name=>playerOName=name);
+
+const boxes = document.querySelectorAll('.box');
+const statusEl = document.querySelector('.status');
+const startBtn = document.getElementById('startBtn');
+const restartBtn = document.getElementById('restartBtn');
+const backBtn = document.getElementById('backBtn');
+const gameBoard = document.getElementById('gameBoard');
+const gameTitle = document.getElementById('gameTitle');
+
+let options = ["","","","","","","","",""];
+let player="X";
+let running=false;
+
+function boxClick(e){
+  if(!running) return;
+  const idx = e.target.dataset.index;
+  if(options[idx]!="") return;
+  options[idx] = player;
+  const imgSrc = player==="X" ? playerXImg.src : playerOImg.src;
+  e.target.innerHTML = `<img src="${imgSrc}" style="width:90px;">`;
+  checkWinner();
+}
+
+function changePlayer(){ 
+  player = (player==="X")?"O":"X"; 
+  const name = player==="X" ? playerXName : playerOName;
+  statusEl.textContent = `Now "${name}" Turn`; 
+}
+
+function checkWinner(){
+  const winCombos = [
+    [0,1,2],[3,4,5],[6,7,8],
+    [0,3,6],[1,4,7],[2,5,8],
+    [0,4,8],[2,4,6]
+  ];
+  let isWon=false;
+  for(const w of winCombos){
+    const [a,b,c] = w.map(i=>options[i]);
+    if(a && a===b && b===c){
+      isWon=true;
+      w.forEach(i=>boxes[i].classList.add('win'));
+    }
+  }
+  if(isWon){
+    const name = player==="X" ? playerXName : playerOName;
+    statusEl.textContent = `"${name}" Won!`;
+    running=false;
+    restartBtn.style.display="inline-block";
+  } else if(!options.includes("")){
+    statusEl.textContent="Draw!";
+    running=false;
+    restartBtn.style.display="inline-block";
+  } else changePlayer();
+}
+
+boxes.forEach(box=>box.addEventListener('click', boxClick));
+
+startBtn.addEventListener("click", ()=>{
+  if(!playerXImg||!playerOImg){ alert("Select both characters!"); return; }
+  document.getElementById('menu').style.display='none';
+  gameBoard.style.display='grid';
+  gameTitle.style.display='block'; // show game header
+  restartBtn.style.display='inline-block';
+  backBtn.style.display='inline-block';
+  player = "X";
+  statusEl.textContent = `Now "${playerXName}" Turn`;
+  running=true;
+});
+
+restartBtn.addEventListener("click", ()=>{
+  options = ["","","","","","","","",""];
+  boxes.forEach(box=>{ box.innerHTML=""; box.classList.remove('win'); });
+  player="X"; 
+  running=true;
+  statusEl.textContent=`Now "${playerXName}" Turn`;
+});
+
+backBtn.addEventListener("click", ()=>{
+  document.getElementById('menu').style.display='flex';
+  gameBoard.style.display='none';
+  gameTitle.style.display='none'; // hide game header
+  restartBtn.style.display='none';
+  backBtn.style.display='none';
+  options = ["","","","","","","","",""];
+  boxes.forEach(box=>{ box.innerHTML=""; box.classList.remove('win'); });
+  statusEl.textContent="Select characters to start!";
+  running=false;
+});
+</script>
+
+</body>
+</html>
