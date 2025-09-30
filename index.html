@@ -11,7 +11,7 @@
 <style>
 :root { 
   --accent: #ff6fa3;
-  --logo-top-gap: 15px;      /* final top gap after jump */
+  --logo-top-gap: 5px;      /* final top gap after jump */
   --text-gap: 20px;          /* gap between logo and text */
   --buttons-gap: 30px;       /* gap between text and buttons */
 }
@@ -159,6 +159,7 @@ iframe.player {
   <div class="choices" id="choices">
     <button id="playPong">PONG</button>
     <button id="playBandB">BOWS & BOMBS</button>
+    <button id="playTicTacToe">TIC TAC TOE</button>
   </div>
 </div>
 
@@ -221,6 +222,7 @@ function openGame(path) {
 // Button listeners
 document.getElementById('playPong').addEventListener('click', () => openGame('pong.html'));
 document.getElementById('playBandB').addEventListener('click', () => openGame('bows-and-bombs.html'));
+document.getElementById('playTicTacToe').addEventListener('click', () => openGame('tictactoe.html'));
 
 // Back button
 backBtn.addEventListener('click', () => {
