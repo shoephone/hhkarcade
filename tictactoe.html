@@ -30,9 +30,9 @@ body {
 
 h1 {
   margin-top: 0;
-  margin-bottom: 20px;
+  margin-bottom: 2px;
   text-align: center;
-  font-size: 2.2rem;
+  font-size: 1.75rem;
   color: white;
 }
 
@@ -171,8 +171,7 @@ button:hover {
   <div data-index="8" class="box"></div>
 </div>
 
-<button id="restartBtn" style="display:none;">Restart 🔁</button>
-<button id="backBtn" style="display:none;">Back</button>
+<button id="restartBtn" style="display:none;">Restart</button>
 
 <script>
 const characters = [
@@ -209,7 +208,6 @@ const boxes = document.querySelectorAll('.box');
 const statusEl = document.querySelector('.status');
 const startBtn = document.getElementById('startBtn');
 const restartBtn = document.getElementById('restartBtn');
-const backBtn = document.getElementById('backBtn');
 const gameBoard = document.getElementById('gameBoard');
 const gameTitle = document.getElementById('gameTitle');
 
@@ -267,7 +265,6 @@ startBtn.addEventListener("click", ()=>{
   gameBoard.style.display='grid';
   gameTitle.style.display='block'; // show game header
   restartBtn.style.display='inline-block';
-  backBtn.style.display='inline-block';
   player = "X";
   statusEl.textContent = `Now "${playerXName}" Turn`;
   running=true;
@@ -279,18 +276,6 @@ restartBtn.addEventListener("click", ()=>{
   player="X"; 
   running=true;
   statusEl.textContent=`Now "${playerXName}" Turn`;
-});
-
-backBtn.addEventListener("click", ()=>{
-  document.getElementById('menu').style.display='flex';
-  gameBoard.style.display='none';
-  gameTitle.style.display='none'; // hide game header
-  restartBtn.style.display='none';
-  backBtn.style.display='none';
-  options = ["","","","","","","","",""];
-  boxes.forEach(box=>{ box.innerHTML=""; box.classList.remove('win'); });
-  statusEl.textContent="Select characters to start!";
-  running=false;
 });
 </script>
 
