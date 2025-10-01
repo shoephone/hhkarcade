@@ -160,6 +160,7 @@ iframe.player {
     <button id="playPong">PONG</button>
     <button id="playBandB">BOWS & BOMBS</button>
     <button id="playTicTacToe">TIC TAC TOE</button>
+    <button id="playNumberGuess">NUMBER GUESSING GAME</button>
   </div>
 </div>
 
@@ -223,6 +224,7 @@ function openGame(path) {
 document.getElementById('playPong').addEventListener('click', () => openGame('pong.html'));
 document.getElementById('playBandB').addEventListener('click', () => openGame('bows-and-bombs.html'));
 document.getElementById('playTicTacToe').addEventListener('click', () => openGame('tictactoe.html'));
+document.getElementById('playNumberGuess').addEventListener('click', () => openGame('number-guess.html'));
 
 // Back button
 backBtn.addEventListener('click', () => {
