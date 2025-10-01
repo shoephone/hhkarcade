@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hannah's Hello Kitty Arcade - Number Guessing Game</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --accent: #ff6fa3;
+  --bg: #000;
+  --button-bg: #111;
+  --button-color: #fff;
+  --win-color: #ffcc00;
+}
+
+body {
+  margin: 0;
+  font-family: 'Press Start 2P', cursive;
+  background: var(--bg);
+  color: var(--accent);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  flex-direction: column;
+}
+
+h1 {
+  font-size: 1.3rem; /* slightly smaller */
+  margin-top: 100px;
+  margin-bottom: 0;
+  color: var(--accent);
+  text-align: center;
+}
+
+.container {
+  text-align: center;
+  background: #111;
+  padding: 20px;
+  border-radius: 20px;
+  box-shadow: 0 0 20px var(--accent);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  transform: scale(0.85);   /* shrink entire game */
+}
+
+.container h2 {
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+}
+
+.display {
+  width: 100%;
+  max-width: 180px;
+  height: 45px;
+  background: #000;
+  color: var(--accent);
+  font-size: 1.3rem;
+  text-align: center;
+  line-height: 45px;
+  margin: 8px 0;
+  border: 2px solid var(--accent);
+  border-radius: 8px;
+}
+
+.guess, .chances {
+  margin: 8px 0;
+  font-size: 0.8rem;
+}
+
+.keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 100px);
+  gap: 8px;
+  margin-top: 15px;
+}
+
+.keypad .key {
+  background: var(--button-bg);
+  color: var(--button-color);
+  font-family: 'Press Start 2P', cursive;
+  font-size: 0.9rem;
+  padding: 12px 0;
+  border-radius: 8px;
+  border: 2px solid var(--accent);
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.keypad .key:active {
+  transform: scale(0.9);
+  box-shadow: 0 0 10px var(--accent);
+}
+
+.keypad .clear { background: #ff6fa3; }
+
+button.action {
+  margin-top: 12px;
+  padding: 8px 24px;
+  font-size: 1.5rem;
+  background: var(--accent);
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: 'Press Start 2P', cursive;
+}
+
+button.action:active { transform: scale(0.95); }
+
+/* Victory Animation */
+#victoryCharacter {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100px;
+  height: auto;
+  transform: translate(-50%, -50%) scale(0);
+  opacity: 0;
+  transition: transform 0.6s ease-out, opacity 0.6s ease-out;
+  z-index: 10;
+}
+
+#victoryCharacter.show {
+  transform: translate(-50%, -50%) scale(1.2);
+  opacity: 1;
+  animation: bounce 1s infinite alternate;
+}
+
+@keyframes bounce {
+  from { transform: translate(-50%, -50%) scale(1.2) translateY(0); }
+  to { transform: translate(-50%, -50%) scale(1.2) translateY(-20px); }
+}
+
+.confetti {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: var(--win-color);
+  animation: fall linear forwards;
+  opacity: 0.9;
+}
+
+@keyframes fall {
+  to {
+    transform: translateY(400px) rotate(360deg);
+    opacity: 0;
+  }
+}
+</style>
+</head>
+
+<body>
+  <h1>Number Guessing Game</h1>
+
+  <div class="container">
+    <h2>Guess a number between 1 and 100</h2>
+    <div class="display" id="inputDisplay"></div>
+    <p class="chances">Chances left: <span id="remainingChances">10</span></p>
+    <p id="guessText">Make your guess!</p>
+
+    <!-- Character victory animation -->
+    <img id="victoryCharacter" src="images/hello-kitty.png" alt="Victory">
+
+    <div class="keypad">
+      <button class="key">1</button>
+      <button class="key">2</button>
+      <button class="key">3</button>
+      <button class="key">4</button>
+      <button class="key">5</button>
+      <button class="key">6</button>
+      <button class="key">7</button>
+      <button class="key">8</button>
+      <button class="key">9</button>
+      <button class="key clear">⌫</button>
+      <button class="key">0</button>
+    </div>
+
+    <!-- ENTER and RESTART buttons -->
+    <button class="action" id="enterBtn">ENTER</button>
+    <button class="action" id="restartBtn">RESTART</button>
+  </div>
+
+<script>
+let randomNumber = Math.floor(Math.random() * 100) + 1;
+let totalChances = 10;
+let currentInput = "";
+
+const inputDisplay = document.getElementById("inputDisplay");
+const keys = document.querySelectorAll(".key");
+const guessText = document.getElementById("guessText");
+const remainingChancesEl = document.getElementById("remainingChances");
+const restartBtn = document.getElementById("restartBtn");
+const enterBtn = document.getElementById("enterBtn");
+const victoryCharacter = document.getElementById("victoryCharacter");
+
+keys.forEach(key => {
+  key.addEventListener("click", () => {
+    if (key.classList.contains("clear")) {
+      currentInput = currentInput.slice(0, -1);
+    } else {
+      currentInput += key.textContent;
+      if (currentInput.length > 3) currentInput = currentInput.slice(0,3);
+    }
+    inputDisplay.textContent = currentInput;
+  });
+});
+
+enterBtn.addEventListener("click", () => {
+  if(currentInput !== "") checkGuess(Number(currentInput));
+  currentInput = "";
+  inputDisplay.textContent = "";
+});
+
+function checkGuess(value) {
+  totalChances--;
+  remainingChancesEl.textContent = totalChances;
+
+  if (value === randomNumber) {
+    guessText.textContent = "🎉 Congratulations! You won!";
+    guessText.style.color = "#ffcc00";
+    triggerVictory();
+    disableKeys();
+  } else if (totalChances === 0) {
+    guessText.textContent = `😥 Game Over! Number was ${randomNumber}`;
+    guessText.style.color = "red";
+    disableKeys();
+  } else if (value > randomNumber) {
+    guessText.textContent = "⬆️ Too high!";
+    guessText.style.color = "#ff6fa3";
+  } else if (value < randomNumber) {
+    guessText.textContent = "⬇️ Too low!";
+    guessText.style.color = "#ff6fa3";
+  }
+}
+
+function disableKeys() {
+  keys.forEach(key => key.disabled = true);
+  enterBtn.disabled = true;
+}
+
+function triggerVictory() {
+  victoryCharacter.classList.add("show");
+  for (let i = 0; i < 40; i++) {
+    let confetti = document.createElement("div");
+    confetti.classList.add("confetti");
+    confetti.style.left = Math.random() * 100 + "%";
+    confetti.style.background = ["#ff6fa3","#ffcc00","#fff","#00cfff"][Math.floor(Math.random()*4)];
+    confetti.style.animationDuration = (Math.random() * 2 + 2) + "s";
+    confetti.style.animationDelay = Math.random() + "s";
+    document.querySelector(".container").appendChild(confetti);
+    setTimeout(() => confetti.remove(), 4000);
+  }
+}
+
+restartBtn.addEventListener("click", () => {
+  randomNumber = Math.floor(Math.random() * 100) + 1;
+  totalChances = 10;
+  currentInput = "";
+  inputDisplay.textContent = "";
+  remainingChancesEl.textContent = totalChances;
+  guessText.textContent = "Make your guess!";
+  guessText.style.color = getComputedStyle(document.documentElement).getPropertyValue('--accent');
+  keys.forEach(key => key.disabled = false);
+  enterBtn.disabled = false;
+  victoryCharacter.classList.remove("show");
+});
+</script>
+</body>
+</html>
