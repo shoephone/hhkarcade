@@ -29,7 +29,7 @@ body {
 
 h1 {
   font-size: 1.3rem; /* slightly smaller */
-  margin-top: 100px;
+  margin-top: 80px;
   margin-bottom: 0;
   color: var(--accent);
   text-align: center;
@@ -222,19 +222,19 @@ function checkGuess(value) {
   remainingChancesEl.textContent = totalChances;
 
   if (value === randomNumber) {
-    guessText.textContent = "🎉 Congratulations! You won!";
+    guessText.textContent = "Congratulations! You won!";
     guessText.style.color = "#ffcc00";
     triggerVictory();
     disableKeys();
   } else if (totalChances === 0) {
-    guessText.textContent = `😥 Game Over! Number was ${randomNumber}`;
+    guessText.textContent = `Game Over! Number was ${randomNumber}`;
     guessText.style.color = "red";
     disableKeys();
   } else if (value > randomNumber) {
-    guessText.textContent = "⬆️ Too high!";
+    guessText.textContent = "⬆Too high!";
     guessText.style.color = "#ff6fa3";
   } else if (value < randomNumber) {
-    guessText.textContent = "⬇️ Too low!";
+    guessText.textContent = "⬇Too low!";
     guessText.style.color = "#ff6fa3";
   }
 }
